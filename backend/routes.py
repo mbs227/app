@@ -4,9 +4,9 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 
-from database import database
-from models import *
-from utils import *
+from backend.database import database
+from backend.models import *
+from backend.utils import *
 
 def get_additional_routes(get_current_user):
     """Get all additional API routes"""
