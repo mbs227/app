@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { mockUser } from '../mock/mockData';
+import { useUser } from '../hooks/useApi';
+import { useState } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -34,9 +35,17 @@ const navigation = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, loading } = useUser();
 
   const isActiveRoute = (href) => {
     return location.pathname === href;
+  };
+
+  // Default user data while loading
+  const displayUser = user || {
+    name: 'ManifestLife User',
+    streak: 0,
+    avatar: '/api/placeholder/50/50'
   };
 
   return (
@@ -78,16 +87,18 @@ export default function Navbar() {
 
           {/* User Menu */}
           <div className="hidden lg:flex items-center space-x-4">
-            <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-purple-700">{mockUser.streak} day streak</span>
-            </div>
+            {!loading && (
+              <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-purple-700">{displayUser.streak || 0} day streak</span>
+              </div>
+            )}
             
             <Link to="/profile" className="group">
               <Avatar className="w-8 h-8 ring-2 ring-purple-200 group-hover:ring-purple-400 transition-all duration-200">
-                <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+                <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
                 <AvatarFallback className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm">
-                  {mockUser.name.split(' ').map(n => n[0]).join('')}
+                  {displayUser.name?.split(' ').map(n => n[0]).join('') || 'U'}
                 </AvatarFallback>
               </Avatar>
             </Link>
@@ -140,12 +151,12 @@ export default function Navbar() {
                 className="flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50"
               >
                 <Avatar className="w-6 h-6">
-                  <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+                  <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
                   <AvatarFallback className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs">
-                    {mockUser.name.split(' ').map(n => n[0]).join('')}
+                    {displayUser.name?.split(' ').map(n => n[0]).join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <span>{mockUser.name}</span>
+                <span>{displayUser.name}</span>
               </Link>
             </div>
           </div>
