@@ -11,22 +11,47 @@ import {
   Flame,
   Plus,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Loader
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { mockUser, mockGoals, mockHabits, mockStats, mockJournalEntries } from '../mock/mockData';
+import { useUser, useGoals, useHabits, useJournalEntries, useGlobalStats } from '../hooks/useApi';
 
 export default function Dashboard() {
-  const completedHabitsToday = mockHabits.filter(habit => 
-    habit.completedDates.includes(new Date().toISOString().split('T')[0])
+  const { user, loading: userLoading } = useUser();
+  const { goals, loading: goalsLoading } = useGoals();
+  const { habits, loading: habitsLoading } = useHabits();
+  const { entries: journalEntries, loading: journalLoading } = useJournalEntries();
+  const { stats: globalStats, loading: statsLoading } = useGlobalStats();
+
+  // Calculate today's completed habits
+  const today = new Date().toISOString().split('T')[0];
+  const completedHabitsToday = habits.filter(habit => 
+    habit.completed_dates?.includes(today)
   ).length;
 
-  const totalHabits = mockHabits.length;
-  const recentGoals = mockGoals.slice(0, 3);
-  const recentJournalEntry = mockJournalEntries[0];
+  const totalHabits = habits.length;
+  const recentGoals = goals.slice(0, 3);
+  const recentJournalEntry = journalEntries[0];
+
+  // Show loading state
+  if (userLoading || goalsLoading || habitsLoading || journalLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-600" />
+          <p className="text-gray-600">Loading your manifestation dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Default values
+  const displayUser = user || { name: 'Manifestor', streak: 0, total_goals: 0, completed_goals: 0 };
+  const displayStats = globalStats || { total_users: 0, goals_achieved: 0, success_stories: 0 };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4 md:p-6">
@@ -35,14 +60,14 @@ export default function Dashboard() {
         <div className="text-center space-y-4 py-8">
           <div className="flex justify-center mb-4">
             <Avatar className="w-20 h-20 ring-4 ring-purple-200 shadow-lg">
-              <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+              <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
               <AvatarFallback className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-2xl">
-                {mockUser.name.split(' ').map(n => n[0]).join('')}
+                {displayUser.name?.split(' ').map(n => n[0]).join('') || 'M'}
               </AvatarFallback>
             </Avatar>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-            Welcome back, {mockUser.name.split(' ')[0]}! ✨
+            Welcome back, {displayUser.name?.split(' ')[0] || 'Manifestor'}! ✨
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Your manifestation journey continues. Today is full of infinite possibilities.
@@ -57,7 +82,7 @@ export default function Dashboard() {
                 <div>
                   <p className="text-purple-100 text-sm font-medium">Current Streak</p>
                   <p className="text-3xl font-bold flex items-center">
-                    {mockUser.streak}
+                    {displayUser.streak || 0}
                     <Flame className="w-6 h-6 ml-2 text-orange-300" />
                   </p>
                 </div>
@@ -73,7 +98,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-pink-100 text-sm font-medium">Active Goals</p>
-                  <p className="text-3xl font-bold">{mockGoals.length}</p>
+                  <p className="text-3xl font-bold">{goals.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <Target className="w-6 h-6" />
@@ -101,7 +126,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm font-medium">Goals Completed</p>
-                  <p className="text-3xl font-bold">{mockUser.completedGoals}</p>
+                  <p className="text-3xl font-bold">{displayUser.completed_goals || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <TrendingUp className="w-6 h-6" />
@@ -130,23 +155,36 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentGoals.map((goal) => (
-                  <div key={goal.id} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-800">{goal.title}</h3>
-                      <span className="text-sm font-medium text-purple-600">{goal.progress}%</span>
+                {recentGoals.length > 0 ? (
+                  recentGoals.map((goal) => (
+                    <div key={goal.id} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-gray-800">{goal.title}</h3>
+                        <span className="text-sm font-medium text-purple-600">{goal.progress || 0}%</span>
+                      </div>
+                      <p className="text-gray-600 text-sm mb-3">{goal.description}</p>
+                      <Progress value={goal.progress || 0} className="h-2 bg-white">
+                        <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300 rounded-full" 
+                             style={{ width: `${goal.progress || 0}%` }} />
+                      </Progress>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-xs text-gray-500">Target: {goal.target_date ? new Date(goal.target_date).toLocaleDateString() : 'No date set'}</span>
+                        <span className="text-xs font-medium text-purple-600">{goal.category}</span>
+                      </div>
                     </div>
-                    <p className="text-gray-600 text-sm mb-3">{goal.description}</p>
-                    <Progress value={goal.progress} className="h-2 bg-white">
-                      <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300 rounded-full" 
-                           style={{ width: `${goal.progress}%` }} />
-                    </Progress>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-xs text-gray-500">Target: {new Date(goal.targetDate).toLocaleDateString()}</span>
-                      <span className="text-xs font-medium text-purple-600">{goal.category}</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Target className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No goals yet! Create your first goal to start manifesting.</p>
+                    <Link to="/goals">
+                      <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create First Goal
+                      </Button>
+                    </Link>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
 
@@ -170,20 +208,22 @@ export default function Dashboard() {
                   <div className="p-4 bg-gradient-to-r from-pink-50 to-blue-50 rounded-xl border border-pink-100">
                     <h3 className="font-semibold text-gray-800 mb-2">{recentJournalEntry.title}</h3>
                     <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                      {recentJournalEntry.content.substring(0, 150)}...
+                      {recentJournalEntry.content?.substring(0, 150)}...
                     </p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-medium">
-                          {recentJournalEntry.mood}
-                        </span>
+                        {recentJournalEntry.mood && (
+                          <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-medium">
+                            {recentJournalEntry.mood}
+                          </span>
+                        )}
                         <span className="text-xs text-gray-500">
-                          {new Date(recentJournalEntry.createdAt).toLocaleDateString()}
+                          {recentJournalEntry.created_at ? new Date(recentJournalEntry.created_at).toLocaleDateString() : 'Recently'}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-500">
                         <Heart className="w-3 h-3" />
-                        <span>{recentJournalEntry.likes}</span>
+                        <span>{recentJournalEntry.likes || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -203,28 +243,35 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {mockHabits.slice(0, 3).map((habit) => {
-                  const isCompleted = habit.completedDates.includes(new Date().toISOString().split('T')[0]);
-                  return (
-                    <div key={habit.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
-                          isCompleted 
-                            ? 'bg-blue-600 border-blue-600' 
-                            : 'border-gray-300 hover:border-blue-400'
-                        }`}>
-                          {isCompleted && (
-                            <div className="w-full h-full rounded-full bg-white scale-50 transition-transform duration-200"></div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800 text-sm">{habit.name}</p>
-                          <p className="text-xs text-gray-500">{habit.streak} day streak</p>
+                {habits.length > 0 ? (
+                  habits.slice(0, 3).map((habit) => {
+                    const isCompleted = habit.completed_dates?.includes(today) || false;
+                    return (
+                      <div key={habit.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+                            isCompleted 
+                              ? 'bg-blue-600 border-blue-600' 
+                              : 'border-gray-300 hover:border-blue-400'
+                          }`}>
+                            {isCompleted && (
+                              <div className="w-full h-full rounded-full bg-white scale-50 transition-transform duration-200"></div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-800 text-sm">{habit.name}</p>
+                            <p className="text-xs text-gray-500">{habit.streak || 0} day streak</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-4">
+                    <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">No habits yet!</p>
+                  </div>
+                )}
                 <Link to="/habits">
                   <Button variant="ghost" size="sm" className="w-full text-blue-600 hover:text-blue-700 mt-2">
                     View All Habits <ArrowRight className="w-4 h-4 ml-1" />
@@ -280,15 +327,15 @@ export default function Dashboard() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-indigo-100">Total Members</span>
-                  <span className="font-bold">{mockStats.totalUsers.toLocaleString()}</span>
+                  <span className="font-bold">{displayStats.total_users?.toLocaleString() || '0'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-indigo-100">Goals Achieved</span>
-                  <span className="font-bold">{mockStats.goalsAchieved.toLocaleString()}</span>
+                  <span className="font-bold">{displayStats.goals_achieved?.toLocaleString() || '0'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-indigo-100">Success Stories</span>
-                  <span className="font-bold">{mockStats.successStories.toLocaleString()}</span>
+                  <span className="font-bold">{displayStats.success_stories?.toLocaleString() || '0'}</span>
                 </div>
                 <Link to="/community">
                   <Button variant="ghost" className="w-full text-white hover:bg-white/20 mt-3">
