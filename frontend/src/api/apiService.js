@@ -1,5 +1,8 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../App';
+
+// Backend API configuration - get directly from environment
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API_BASE_URL = `${BACKEND_URL}/api`;
 
 // Create axios instance with base configuration
 const api = axios.create({
