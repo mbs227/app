@@ -7,9 +7,9 @@ import logging
 from pathlib import Path
 
 # Import our modules
-from database import database
-from models import *
-from utils import *
+from backend.database import database
+from backend.models import *
+from backend.utils import *
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
