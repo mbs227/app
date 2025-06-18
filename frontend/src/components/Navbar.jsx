@@ -13,11 +13,12 @@ import {
   User,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { useUser } from '../hooks/useApi';
+import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
 
 const navigation = [
@@ -35,10 +36,15 @@ const navigation = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { user, loading } = useUser();
+  const { user, logout } = useAuth();
 
   const isActiveRoute = (href) => {
     return location.pathname === href;
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsOpen(false);
   };
 
   // Default user data while loading
@@ -87,12 +93,10 @@ export default function Navbar() {
 
           {/* User Menu */}
           <div className="hidden lg:flex items-center space-x-4">
-            {!loading && (
-              <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-purple-700">{displayUser.streak || 0} day streak</span>
-              </div>
-            )}
+            <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-purple-700">{displayUser.streak || 0} day streak</span>
+            </div>
             
             <Link to="/profile" className="group">
               <Avatar className="w-8 h-8 ring-2 ring-purple-200 group-hover:ring-purple-400 transition-all duration-200">
@@ -102,6 +106,15 @@ export default function Navbar() {
                 </AvatarFallback>
               </Avatar>
             </Link>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-gray-600 hover:text-red-600"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -144,7 +157,7 @@ export default function Navbar() {
             })}
             
             {/* Mobile User Info */}
-            <div className="mt-4 pt-4 border-t border-purple-100">
+            <div className="mt-4 pt-4 border-t border-purple-100 space-y-2">
               <Link
                 to="/profile"
                 onClick={() => setIsOpen(false)}
@@ -158,6 +171,14 @@ export default function Navbar() {
                 </Avatar>
                 <span>{displayUser.name}</span>
               </Link>
+              
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 w-full text-left"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sign Out</span>
+              </button>
             </div>
           </div>
         </div>
