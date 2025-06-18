@@ -27,15 +27,15 @@ export default function Dashboard() {
   const { entries: journalEntries, loading: journalLoading } = useJournalEntries();
   const { stats: globalStats, loading: statsLoading } = useGlobalStats();
 
-  // Calculate today's completed habits
+  // Calculate today's completed habits - add null check
   const today = new Date().toISOString().split('T')[0];
-  const completedHabitsToday = habits.filter(habit => 
+  const completedHabitsToday = (habits && Array.isArray(habits)) ? habits.filter(habit => 
     habit.completed_dates?.includes(today)
-  ).length;
+  ).length : 0;
 
-  const totalHabits = habits.length;
-  const recentGoals = goals.slice(0, 3);
-  const recentJournalEntry = journalEntries[0];
+  const totalHabits = (habits && Array.isArray(habits)) ? habits.length : 0;
+  const recentGoals = (goals && Array.isArray(goals)) ? goals.slice(0, 3) : [];
+  const recentJournalEntry = (journalEntries && Array.isArray(journalEntries)) ? journalEntries[0] : null;
 
   // Show loading state
   if (userLoading || goalsLoading || habitsLoading || journalLoading) {
