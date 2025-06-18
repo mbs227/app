@@ -8,7 +8,8 @@ import {
   Trash2, 
   Filter,
   Search,
-  CheckCircle
+  CheckCircle,
+  Loader
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -19,10 +20,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
-import { mockGoals } from '../mock/mockData';
+import { useGoals, useMutation } from '../hooks/useApi';
+import { goalsAPI } from '../api/apiService';
 
 export default function Goals() {
-  const [goals, setGoals] = useState(mockGoals);
+  const { goals, loading, refetchGoals } = useGoals();
+  const { mutate } = useMutation();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -30,46 +34,68 @@ export default function Goals() {
     title: '',
     description: '',
     category: '',
-    targetDate: ''
+    target_date: ''
   });
 
-  const categories = ['all', 'Career', 'Health', 'Lifestyle', 'Relationships', 'Spiritual'];
+  const categories = ['all', 'Career', 'Health', 'Lifestyle', 'Relationships', 'Spiritual', 'Personal'];
+  
   const filteredGoals = goals.filter(goal => {
-    const matchesSearch = goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         goal.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = goal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         goal.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || goal.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const handleCreateGoal = () => {
+  const handleCreateGoal = async () => {
     if (newGoal.title && newGoal.description) {
-      const goal = {
-        id: Date.now().toString(),
-        title: newGoal.title,
-        description: newGoal.description,
-        category: newGoal.category,
-        targetDate: newGoal.targetDate,
-        progress: 0,
-        status: 'in-progress',
-        createdAt: new Date().toISOString(),
-        milestones: []
-      };
-      setGoals([...goals, goal]);
-      setNewGoal({ title: '', description: '', category: '', targetDate: '' });
-      setIsCreateDialogOpen(false);
+      try {
+        await mutate(
+          () => goalsAPI.createGoal(newGoal),
+          {
+            onSuccess: () => {
+              setNewGoal({ title: '', description: '', category: '', target_date: '' });
+              setIsCreateDialogOpen(false);
+              refetchGoals();
+            },
+            successMessage: "Goal created successfully!"
+          }
+        );
+      } catch (error) {
+        console.error('Error creating goal:', error);
+      }
     }
   };
 
-  const updateGoalProgress = (goalId, newProgress) => {
-    setGoals(goals.map(goal => 
-      goal.id === goalId 
-        ? { ...goal, progress: newProgress, status: newProgress === 100 ? 'completed' : 'in-progress' }
-        : goal
-    ));
+  const updateGoalProgress = async (goalId, newProgress) => {
+    try {
+      await mutate(
+        () => goalsAPI.updateGoal(goalId, { progress: newProgress }),
+        {
+          onSuccess: () => {
+            refetchGoals();
+          },
+          successMessage: "Goal progress updated!"
+        }
+      );
+    } catch (error) {
+      console.error('Error updating goal:', error);
+    }
   };
 
-  const deleteGoal = (goalId) => {
-    setGoals(goals.filter(goal => goal.id !== goalId));
+  const deleteGoal = async (goalId) => {
+    try {
+      await mutate(
+        () => goalsAPI.deleteGoal(goalId),
+        {
+          onSuccess: () => {
+            refetchGoals();
+          },
+          successMessage: "Goal deleted successfully!"
+        }
+      );
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+    }
   };
 
   const getProgressColor = (progress) => {
@@ -77,6 +103,17 @@ export default function Goals() {
     if (progress >= 50) return 'from-yellow-500 to-amber-500';
     return 'from-purple-500 to-pink-500';
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-600" />
+          <p className="text-gray-600">Loading your goals...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4 md:p-6">
@@ -168,8 +205,8 @@ export default function Goals() {
                   <Input
                     id="targetDate"
                     type="date"
-                    value={newGoal.targetDate}
-                    onChange={(e) => setNewGoal({...newGoal, targetDate: e.target.value})}
+                    value={newGoal.target_date}
+                    onChange={(e) => setNewGoal({...newGoal, target_date: e.target.value})}
                   />
                 </div>
                 <Button onClick={handleCreateGoal} className="w-full bg-gradient-to-r from-purple-600 to-pink-600">
@@ -221,12 +258,12 @@ export default function Goals() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">Progress</span>
-                    <span className="text-sm font-bold text-purple-600">{goal.progress}%</span>
+                    <span className="text-sm font-bold text-purple-600">{goal.progress || 0}%</span>
                   </div>
-                  <Progress value={goal.progress} className="h-2 bg-gray-200">
+                  <Progress value={goal.progress || 0} className="h-2 bg-gray-200">
                     <div 
-                      className={`h-full bg-gradient-to-r ${getProgressColor(goal.progress)} transition-all duration-300 rounded-full`}
-                      style={{ width: `${goal.progress}%` }}
+                      className={`h-full bg-gradient-to-r ${getProgressColor(goal.progress || 0)} transition-all duration-300 rounded-full`}
+                      style={{ width: `${goal.progress || 0}%` }}
                     />
                   </Progress>
                 </div>
@@ -254,14 +291,14 @@ export default function Goals() {
                   <div className="flex items-center space-x-1 text-gray-500">
                     <Calendar className="w-4 h-4" />
                     <span className="text-xs">
-                      Due: {new Date(goal.targetDate).toLocaleDateString()}
+                      Due: {goal.target_date ? new Date(goal.target_date).toLocaleDateString() : 'No date set'}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => updateGoalProgress(goal.id, Math.min(100, goal.progress + 10))}
+                      onClick={() => updateGoalProgress(goal.id, Math.min(100, (goal.progress || 0) + 10))}
                       className="text-xs px-2 py-1 border-purple-200 text-purple-600 hover:bg-purple-50"
                     >
                       <TrendingUp className="w-3 h-3 mr-1" />
