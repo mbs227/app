@@ -18,10 +18,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { useUser, useGoals, useHabits, useJournalEntries, useGlobalStats } from '../hooks/useApi';
+import { useGoals, useHabits, useJournalEntries, useGlobalStats } from '../hooks/useApi';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Dashboard() {
-  const { user, loading: userLoading } = useUser();
+  const { user } = useAuth();
   const { goals, loading: goalsLoading } = useGoals();
   const { habits, loading: habitsLoading } = useHabits();
   const { entries: journalEntries, loading: journalLoading } = useJournalEntries();
@@ -38,7 +39,7 @@ export default function Dashboard() {
   const recentJournalEntry = (journalEntries && Array.isArray(journalEntries)) ? journalEntries[0] : null;
 
   // Show loading state
-  if (userLoading || goalsLoading || habitsLoading || journalLoading) {
+  if (goalsLoading || habitsLoading || journalLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -98,7 +99,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-pink-100 text-sm font-medium">Active Goals</p>
-                  <p className="text-3xl font-bold">{goals.length}</p>
+                  <p className="text-3xl font-bold">{goals ? goals.length : 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <Target className="w-6 h-6" />
@@ -243,7 +244,7 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {habits.length > 0 ? (
+                {habits && habits.length > 0 ? (
                   habits.slice(0, 3).map((habit) => {
                     const isCompleted = habit.completed_dates?.includes(today) || false;
                     return (
