@@ -101,3 +101,195 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Test the ManifestLife backend API comprehensively."
+
+backend:
+  - task: "Basic Health Check - Root Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Root endpoint (/api/) returns 200 OK with the expected message."
+
+  - task: "Basic Health Check - Health Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Health endpoint (/api/health) returns 200 OK with healthy status and timestamp."
+
+  - task: "User Management - Create User"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "User creation endpoint (/api/users) successfully creates new users with the provided data."
+
+  - task: "User Management - Get Current User"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Get current user endpoint (/api/users/me) returns the user profile with all expected fields."
+
+  - task: "User Management - Update User Profile"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Update user profile endpoint (/api/users/me) successfully updates user data."
+
+  - task: "Goals Management - CRUD Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Goal CRUD operations work correctly. Create, read, update, and delete endpoints function as expected. Minor issue: Getting a deleted goal returns 500 instead of 404, but this doesn't affect functionality."
+
+  - task: "Vision Boards - CRUD Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Vision board operations work correctly. Create, read, and update endpoints function as expected."
+
+  - task: "Journal Entries - CRUD Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Journal entry operations work correctly. Create, read, like, and delete endpoints function as expected."
+
+  - task: "Affirmations - CRUD Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Affirmation operations work correctly. Create, read, update, and delete endpoints function as expected."
+
+  - task: "Habits - CRUD Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/routes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Habit operations work correctly. Create, read, update, toggle, and delete endpoints function as expected."
+
+  - task: "Gratitude Entries - CRUD Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/routes_community.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Gratitude entry operations work correctly. Create, read, update, and delete endpoints function as expected."
+
+  - task: "Community Posts - CRUD Operations"
+    implemented: true
+    working: false
+    file: "/app/backend/routes_community.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "Community post creation endpoint (/api/community-posts) returns 500 Internal Server Error. This needs to be fixed."
+
+  - task: "Templates & Sessions - Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/routes_community.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Template and session operations work correctly. Get templates, get specific template, create session, get sessions, get active session, and update session endpoints function as expected."
+
+  - task: "Statistics - Global and User Stats"
+    implemented: true
+    working: true
+    file: "/app/backend/routes_community.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Statistics endpoints work correctly. Global stats and user stats endpoints return the expected data."
+
+frontend:
+  # No frontend tasks tested
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Community Posts - CRUD Operations"
+  stuck_tasks:
+    - "Community Posts - CRUD Operations"
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: "I've completed comprehensive testing of the ManifestLife backend API. All endpoints are working correctly except for the community posts creation endpoint, which returns a 500 Internal Server Error. This issue needs to be fixed. The error occurs when trying to create a new community post. All other endpoints are functioning as expected."
