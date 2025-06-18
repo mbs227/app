@@ -231,8 +231,8 @@ async def delete_goal(goal_id: str, current_user: str = Depends(get_current_user
         raise HTTPException(status_code=500, detail="Failed to delete goal")
 
 # Import additional routes
-from routes import get_additional_routes
-from routes_community import get_community_routes
+from backend.routes import get_additional_routes
+from backend.routes_community import get_community_routes
 
 # Add additional routes to the API router
 additional_routes = get_additional_routes(get_current_user)
