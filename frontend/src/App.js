@@ -15,10 +15,6 @@ import Templates from './pages/Templates';
 import Profile from './pages/Profile';
 import './App.css';
 
-// Backend API configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-export const API_BASE_URL = `${BACKEND_URL}/api`;
-
 function App() {
   return (
     <ToastProvider>
