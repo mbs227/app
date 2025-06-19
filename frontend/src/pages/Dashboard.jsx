@@ -244,7 +244,7 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {habits && habits.length > 0 ? (
+                {Array.isArray(habits) && habits.length > 0 ? (
                   habits.slice(0, 3).map((habit) => {
                     const isCompleted = habit.completed_dates?.includes(today) || false;
                     return (
