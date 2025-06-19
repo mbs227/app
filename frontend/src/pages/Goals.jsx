@@ -39,12 +39,16 @@ export default function Goals() {
 
   const categories = ['all', 'Career', 'Health', 'Lifestyle', 'Relationships', 'Spiritual', 'Personal'];
   
-  const filteredGoals = goals.filter(goal => {
-    const matchesSearch = goal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         goal.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || goal.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
+ const filteredGoals = Array.isArray(goals)
+  ? goals.filter(goal => {
+      const matchesSearch =
+        goal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        goal.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        filterCategory === 'all' || goal.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    })
+  : [];
 
   const handleCreateGoal = async () => {
     if (newGoal.title && newGoal.description) {
