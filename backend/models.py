@@ -69,14 +69,14 @@ class Goal(BaseDocument):
     target_date: str
     progress: int = 0
     status: str = "in-progress"  # in-progress, completed, paused
-    milestones: List[Milestone] = []
+    milestones: List[Milestone] = Field(default_factory=list)
 
 class GoalCreate(BaseModel):
     title: str
     description: str
     category: str
     target_date: str
-    milestones: List[Milestone] = []
+    milestones: List[Milestone] = Field(default_factory=list)
 
 class GoalUpdate(BaseModel):
     title: Optional[str] = None
@@ -99,14 +99,14 @@ class VisionBoard(BaseDocument):
     user_id: str
     title: str
     description: str
-    images: List[VisionImage] = []
-    affirmations: List[str] = []
+    images: List[VisionImage] = Field(default_factory=list)
+    affirmations: List[str] = Field(default_factory=list)
 
 class VisionBoardCreate(BaseModel):
     title: str
     description: str
-    images: List[VisionImage] = []
-    affirmations: List[str] = []
+    images: List[VisionImage] = Field(default_factory=list)
+    affirmations: List[str] = Field(default_factory=list)
 
 class VisionBoardUpdate(BaseModel):
     title: Optional[str] = None
@@ -123,18 +123,18 @@ class JournalEntry(BaseDocument):
     is_public: bool = False
     likes: int = 0
     comments: int = 0
-    tags: List[str] = []
+    tags: List[str] = Field(default_factory=list)
     manifestation_method: Optional[str] = None
-    images: List[str] = []
+    images: List[str] = Field(default_factory=list)
 
 class JournalEntryCreate(BaseModel):
     title: str
     content: str
     mood: Optional[str] = None
     is_public: bool = False
-    tags: List[str] = []
+    tags: List[str] = Field(default_factory=list)
     manifestation_method: Optional[str] = None
-    images: List[str] = []
+    images: List[str] = Field(default_factory=list)
 
 class JournalEntryUpdate(BaseModel):
     title: Optional[str] = None
@@ -173,7 +173,7 @@ class Habit(BaseDocument):
     category: str
     frequency: str  # daily, weekly, monthly
     streak: int = 0
-    completed_dates: List[str] = []
+    completed_dates: List[str] = Field(default_factory=list)
     target: int = 30
     progress: int = 0
 
@@ -199,10 +199,7 @@ class GratitudeEntry(BaseDocument):
     user_id: str
     title: str
     entries: List[str]
-    mood: Optional[str] = None
-    image: Optional[str] = None
-
-class GratitudeEntryCreate(BaseModel):
+@@ -206,104 +206,104 @@ class GratitudeEntryCreate(BaseModel):
     title: str
     entries: List[str]
     mood: Optional[str] = None
@@ -228,15 +225,15 @@ class CommunityPost(BaseDocument):
     likes: int = 0
     comments: int = 0
     shares: int = 0
-    tags: List[str] = []
-    images: List[str] = []
+    tags: List[str] = Field(default_factory=list)
+    images: List[str] = Field(default_factory=list)
     time_ago: str = "Just now"
 
 class CommunityPostCreate(BaseModel):
     title: str
     content: str
-    tags: List[str] = []
-    images: List[str] = []
+    tags: List[str] = Field(default_factory=list)
+    images: List[str] = Field(default_factory=list)
 
 class CommunityPostUpdate(BaseModel):
     title: Optional[str] = None
@@ -283,7 +280,7 @@ class TemplateSession(BaseDocument):
     total_days: int
     is_active: bool = True
     start_date: datetime = Field(default_factory=datetime.utcnow)
-    completed_dates: List[str] = []
+    completed_dates: List[str] = Field(default_factory=list)
 
 class TemplateSessionCreate(BaseModel):
     template_id: str
