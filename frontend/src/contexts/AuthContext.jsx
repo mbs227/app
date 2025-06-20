@@ -32,10 +32,11 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setIsAuthenticated(true);
         
-        // Verify with backend
+        // Verify with backend using stored email
         try {
-          const response = await userAPI.getCurrentUser();
+          const response = await userAPI.getCurrentUser(userData.email);
           setUser(response.data);
+          localStorage.setItem('manifestlife_user', JSON.stringify(response.data));
         } catch (error) {
           // If backend call fails, clear stored data
           localStorage.removeItem('manifestlife_user');
@@ -59,18 +60,22 @@ export const AuthProvider = ({ children }) => {
       // Try to get existing user or create new one
       let userData;
       try {
-        const response = await userAPI.getCurrentUser();
+        const response = await userAPI.getCurrentUser(email);
         userData = response.data;
       } catch (error) {
-        // User doesn't exist, create new one
-        const createResponse = await userAPI.createUser({
-          email,
-          name,
-          bio: `Welcome to ManifestLife! I'm ${name} and I'm excited to start my manifestation journey.`,
-          location: '',
-          website: ''
-        });
-        userData = createResponse.data;
+        if (error.response?.status === 404) {
+          // User doesn't exist, create new one
+          const createResponse = await userAPI.createUser({
+            email,
+            name,
+            bio: `Welcome to ManifestLife! I'm ${name} and I'm excited to start my manifestation journey.`,
+            location: '',
+            website: ''
+          });
+          userData = createResponse.data;
+        } else {
+          throw error; // Other errors (e.g., network issues, bad request)
+        }
       }
 
       setUser(userData);
@@ -82,7 +87,7 @@ export const AuthProvider = ({ children }) => {
       return userData;
     } catch (error) {
       console.error('Login failed:', error);
-      throw error;
+      throw new Error(error.response?.data?.detail || 'Login failed');
     } finally {
       setLoading(false);
     }
