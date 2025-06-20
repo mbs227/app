@@ -24,15 +24,16 @@ api.interceptors.response.use(
 // User API
 export const userAPI = {
   getCurrentUser: async (email) => {
-    return await axios.get(`${API_URL}/users/me`, { params: { email } });
+    return await axios.get(`${API_BASE_URL}/users/me`, { params: { email } });
   },
   createUser: async (userData) => {
-    return await axios.post(`${API_URL}/users`, userData);
+    return await axios.post(`${API_BASE_URL}/users`, userData);
   },
   updateUser: async (userData) => {
-    return await axios.put(`${API_URL}/users/me`, userData);
+    return await axios.put(`${API_BASE_URL}/users/me`, userData);
   }
 };
+
 
 // Goals API
 export const goalsAPI = {
