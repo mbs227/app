@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Backend API configuration - get directly from environment
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://app-production-a95a.up.railway.app';
 const API_BASE_URL = `${BACKEND_URL}/api`;
 
 // Create axios instance with base configuration
