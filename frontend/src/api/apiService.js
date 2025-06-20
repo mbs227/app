@@ -23,9 +23,15 @@ api.interceptors.response.use(
 
 // User API
 export const userAPI = {
-  getCurrentUser: () => api.get('/users/me'),
-  updateUser: (userData) => api.put('/users/me', userData),
-  createUser: (userData) => api.post('/users', userData),
+  getCurrentUser: async (email) => {
+    return await axios.get(`${API_URL}/users/me`, { params: { email } });
+  },
+  createUser: async (userData) => {
+    return await axios.post(`${API_URL}/users`, userData);
+  },
+  updateUser: async (userData) => {
+    return await axios.put(`${API_URL}/users/me`, userData);
+  }
 };
 
 // Goals API
