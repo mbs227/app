@@ -46,12 +46,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Helper function to get current user (simplified for MVP)
-async def get_current_user() -> str:
-    """Get current user ID - simplified for MVP"""
-    # In a real app, this would validate JWT tokens
-    # For now, we'll use a default user
-    return "default_user_123"
+# Helper function to get current user (modified for email-based lookup)
+async def get_current_user(email: str = None) -> Optional[str]:
+    """Get current user ID by email - simplified for MVP"""
+    # In a real app, this would validate JWT tokens and extract email
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+    
+    user = await database.get_user_by_email(email)
+    if not user:
+        return None
+    return user['id']
 
 # Basic routes
 @api_router.get("/")
@@ -87,30 +92,25 @@ async def create_user(user_data: UserCreate):
         raise HTTPException(status_code=500, detail="Failed to create user")
 
 @api_router.get("/users/me", response_model=User)
-async def get_current_user_profile(current_user: str = Depends(get_current_user)):
+async def get_current_user_profile(email: str):  # Email passed directly for MVP
     """Get current user profile"""
     try:
-        user = await database.get_document("users", current_user)
+        user_id = await get_current_user(email)
+        if not user_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user = await database.get_document("users", user_id)
         if not user:
-            # Create default user if doesn't exist
-            default_user = {
-                'id': current_user,
-                'name': 'Sarah Johnson',
-                'email': 'sarah@example.com',
-                'bio': 'Passionate manifestor on a journey to create my dream life.',
-                'location': 'San Francisco, CA',
-                'website': 'sarahjohnson.co',
-                'avatar': '/api/placeholder/150/150'
-            }
-            await database.create_document("users", default_user)
-            user = default_user
+            raise HTTPException(status_code=404, detail="User not found")
         
         # Update user stats
-        stats = await database.get_user_stats(current_user)
+        stats = await database.get_user_stats(user_id)
         user = update_user_stats(user, stats)
         
         return format_document_for_response(user)
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting user profile: {e}")
         raise HTTPException(status_code=500, detail="Failed to get user profile")
