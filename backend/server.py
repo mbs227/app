@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
+app.include_router(api_router, prefix='/api')
 
 # Configure CORS
 app.add_middleware(
