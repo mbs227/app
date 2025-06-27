@@ -111,7 +111,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-@api_router.post("/token", response_model=Token)
+@api_router.post("/token")
 @limiter.limit("5/minute")
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
