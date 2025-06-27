@@ -1,13 +1,12 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
-from jose import JWTError, jwt
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 from pathlib import Path
 import logging
@@ -88,39 +87,6 @@ class ErrorResponse(BaseModel):
     code: str | None = None
     timestamp: datetime = datetime.utcnow()
 
-# Authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/token")
-
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
-    """
-    Get current user ID from JWT token.
-
-    Args:
-        token (str): JWT token from Authorization header.
-
-    Returns:
-        str: User ID.
-
-    Raises:
-        HTTPException: If token is invalid or user not found.
-    """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user = await database.get_user_by_email(email)
-    if user is None:
-        raise credentials_exception
-    return user["id"]
-
 # Database dependency
 async def get_database():
     return database
@@ -139,6 +105,52 @@ async def root(request: Request):
 async def health_check(request: Request):
     """Health check endpoint."""
     return {"status": "healthy", "timestamp": datetime.utcnow()}
+
+# Token endpoint
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+@api_router.post("/token", response_model=Token)
+@limiter.limit("5/minute")
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db=Depends(get_database)
+):
+    """
+    Authenticate user and issue JWT token.
+
+    Args:
+        form_data: OAuth2 form data with username (email) and password.
+        db: Database dependency.
+
+    Returns:
+        Token: JWT access token and token type.
+
+    Raises:
+        HTTPException: If credentials are invalid (401) or database unavailable (503).
+    """
+    try:
+        user = await db.get_user_by_email(form_data.username)
+        if not user or not verify_password(form_data.password, user.get("hashed_password")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        access_token_expires = timedelta(minutes=30)
+        access_token = create_access_token(
+            data={"sub": user["email"]}, expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
+    
+    except MongoConnectionError as e:
+        logger.error(f"Database connection error: {e}")
+        raise HTTPException(status_code=503, detail="Database unavailable")
+    except Exception as e:
+        logger.error(f"Error during login: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # Caching decorator
 def cache(key_prefix: str, ttl: int = 300):
@@ -162,7 +174,7 @@ async def create_user(user_data: UserCreate, request: Request, db=Depends(get_da
     Create a new user.
 
     Args:
-        user_data (UserCreate): User data including email and other fields.
+        user_data (UserCreate): User data including email and password.
         request (Request): FastAPI request object.
         db: Database dependency.
 
@@ -179,6 +191,8 @@ async def create_user(user_data: UserCreate, request: Request, db=Depends(get_da
         
         user_dict = user_data.dict()
         user_dict["id"] = str(uuid.uuid4())
+        user_dict["hashed_password"] = verify_password(user_data.password, user_data.password)  # Hash password
+        del user_dict["password"]  # Remove plain password
         await db.create_document(COLLECTIONS["USERS"], user_dict)
         created_user = await db.get_document(COLLECTIONS["USERS"], user_dict["id"])
         return format_document_for_response(created_user)
@@ -435,23 +449,6 @@ async def delete_goal(goal_id: str, current_user: str = Depends(get_current_user
     except Exception as e:
         logger.error(f"Error deleting goal: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-
-# Test endpoint (development only)
-if settings.environment == "development":
-    @api_router.get("/test/reset")
-    async def reset_database(db=Depends(get_database)):
-        """
-        Reset database for testing (development only).
-
-        Args:
-            db: Database dependency.
-
-        Returns:
-            dict: Success message.
-        """
-        await db.drop_collection(COLLECTIONS["USERS"])
-        await db.drop_collection(COLLECTIONS["GOALS"])
-        return {"message": "Database reset"}
 
 # Include additional routes
 from backend.routes import get_additional_routes
