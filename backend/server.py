@@ -21,6 +21,7 @@ from backend.database import database
 from backend.models import *
 from backend.utils import *
 from backend.constants import COLLECTIONS
+from backend.auth import get_current_user, create_access_token, verify_password
 
 # Environment configuration
 class Settings(BaseSettings):
