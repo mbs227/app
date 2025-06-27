@@ -35,8 +35,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Configure logging
