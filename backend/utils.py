@@ -76,7 +76,7 @@ def get_user_level(total_goals: int, completed_goals: int, max_streak: int) -> s
     else:
         return "Rising Star"
 
-def save_base64_image(base64_data: str, folder: str = "uploads") -> str:
+def save_base64_image(base64_data: str, folder: str = "Uploads") -> str:
     """Save base64 image to file and return filename"""
     try:
         # Create uploads directory if it doesn't exist
@@ -107,9 +107,10 @@ def format_document_for_response(doc: Dict[str, Any]) -> Dict[str, Any]:
     if doc is None:
         return None
     
-    # Remove MongoDB _id field
-    if '_id' in doc:
-        del doc['_id']
+    # Remove sensitive fields
+    for field in ['_id', 'hashed_password']:
+        if field in doc:
+            del doc[field]
     
     # Format datetime fields
     for field in ['created_at', 'updated_at', 'join_date', 'start_date']:
@@ -117,12 +118,6 @@ def format_document_for_response(doc: Dict[str, Any]) -> Dict[str, Any]:
             doc[field] = doc[field].isoformat()
     
     return doc
-
-def validate_email(email: str) -> bool:
-    """Basic email validation"""
-    import re
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email) is not None
 
 def generate_mock_achievements(user_stats: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Generate user achievements based on stats"""
