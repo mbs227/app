@@ -1,12 +1,14 @@
-# Community and additional routes for ManifestLife backend
-from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Depends, Request
+from typing import List, Optional, Dict
+from pymongo.errors import ConnectionError as MongoConnectionError
 import uuid
 from datetime import datetime
 
+from server import logger, limiter
 from backend.database import database
 from backend.models import *
 from backend.utils import *
+from backend.constants import COLLECTIONS
 
 def get_community_routes(get_current_user):
     """Get community and additional API routes"""
@@ -14,10 +16,12 @@ def get_community_routes(get_current_user):
     router = APIRouter()
 
     # Gratitude Entry routes
-    @router.post("/gratitude-entries", response_model=GratitudeEntry)
+    @router.post("/gratitude-entries", response_model=GratitudeEntry, responses={400: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
     async def create_gratitude_entry(
         entry_data: GratitudeEntryCreate, 
-        current_user: str = Depends(get_current_user)
+        current_user: str = Depends(get_current_user),
+        request: Request = None
     ):
         """Create a new gratitude entry"""
         try:
@@ -25,85 +29,114 @@ def get_community_routes(get_current_user):
             entry_dict['id'] = str(uuid.uuid4())
             entry_dict['user_id'] = current_user
             
-            await database.create_document("gratitude_entries", entry_dict)
+            await database.create_document(COLLECTIONS["GRATITUDE_ENTRIES"], entry_dict)
             
-            created_entry = await database.get_document("gratitude_entries", entry_dict['id'])
+            created_entry = await database.get_document(COLLECTIONS["GRATITUDE_ENTRIES"], entry_dict['id'])
+            if not created_entry:
+                raise HTTPException(status_code=500, detail="Failed to retrieve created gratitude entry")
             return format_document_for_response(created_entry)
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in create_gratitude_entry: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to create gratitude entry: {e}")
             raise HTTPException(status_code=500, detail="Failed to create gratitude entry")
 
-    @router.get("/gratitude-entries", response_model=List[GratitudeEntry])
-    async def get_gratitude_entries(current_user: str = Depends(get_current_user)):
+    @router.get("/gratitude-entries", response_model=List[GratitudeEntry], responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_gratitude_entries(
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Get all gratitude entries for current user"""
         try:
-            entries = await database.get_user_documents("gratitude_entries", current_user)
+            entries = await database.get_user_documents(COLLECTIONS["GRATITUDE_ENTRIES"], current_user)
             return [format_document_for_response(entry) for entry in entries]
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in get_gratitude_entries: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to get gratitude entries: {e}")
             raise HTTPException(status_code=500, detail="Failed to get gratitude entries")
 
-    @router.put("/gratitude-entries/{entry_id}", response_model=GratitudeEntry)
+    @router.put("/gratitude-entries/{entry_id}", response_model=GratitudeEntry, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
     async def update_gratitude_entry(
         entry_id: str, 
         entry_data: GratitudeEntryUpdate, 
-        current_user: str = Depends(get_current_user)
+        current_user: str = Depends(get_current_user),
+        request: Request = None
     ):
         """Update a gratitude entry"""
         try:
-            entry = await database.get_document("gratitude_entries", entry_id)
+            entry = await database.get_document(COLLECTIONS["GRATITUDE_ENTRIES"], entry_id)
             if not entry or entry.get('user_id') != current_user:
                 raise HTTPException(status_code=404, detail="Gratitude entry not found")
             
             update_dict = {k: v for k, v in entry_data.dict().items() if v is not None}
+            if not update_dict:
+                raise HTTPException(status_code=400, detail="No data to update")
             
-            success = await database.update_document("gratitude_entries", entry_id, update_dict)
+            success = await database.update_document(COLLECTIONS["GRATITUDE_ENTRIES"], entry_id, update_dict)
             if not success:
                 raise HTTPException(status_code=404, detail="Gratitude entry not found")
             
-            updated_entry = await database.get_document("gratitude_entries", entry_id)
+            updated_entry = await database.get_document(COLLECTIONS["GRATITUDE_ENTRIES"], entry_id)
             return format_document_for_response(updated_entry)
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in update_gratitude_entry: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to update gratitude entry: {e}")
             raise HTTPException(status_code=500, detail="Failed to update gratitude entry")
 
-    @router.delete("/gratitude-entries/{entry_id}")
-    async def delete_gratitude_entry(entry_id: str, current_user: str = Depends(get_current_user)):
+    @router.delete("/gratitude-entries/{entry_id}", responses={404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def delete_gratitude_entry(
+        entry_id: str,
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Delete a gratitude entry"""
         try:
-            entry = await database.get_document("gratitude_entries", entry_id)
+            entry = await database.get_document(COLLECTIONS["GRATITUDE_ENTRIES"], entry_id)
             if not entry or entry.get('user_id') != current_user:
                 raise HTTPException(status_code=404, detail="Gratitude entry not found")
             
-            success = await database.delete_document("gratitude_entries", entry_id)
+            success = await database.delete_document(COLLECTIONS["GRATITUDE_ENTRIES"], entry_id)
             if not success:
                 raise HTTPException(status_code=404, detail="Gratitude entry not found")
             
             return {"message": "Gratitude entry deleted successfully"}
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in delete_gratitude_entry: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to delete gratitude entry: {e}")
             raise HTTPException(status_code=500, detail="Failed to delete gratitude entry")
 
     # Community Post routes
-    @router.post("/community-posts", response_model=CommunityPost)
+    @router.post("/community-posts", response_model=CommunityPost, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
     async def create_community_post(
         post_data: CommunityPostCreate, 
-        current_user: str = Depends(get_current_user)
+        current_user: str = Depends(get_current_user),
+        request: Request = None
     ):
         """Create a new community post"""
         try:
             # Get user info for author
-            user = await database.get_document("users", current_user)
+            user = await database.get_document(COLLECTIONS["USERS"], current_user)
             if not user:
-                # Create default user if doesn't exist
-                default_user = {
-                    'id': current_user,
-                    'name': 'Sarah Johnson',
-                    'email': 'sarah@example.com',
-                    'level': 'Rising Star'
-                }
-                await database.create_document("users", default_user)
-                user = default_user
+                raise HTTPException(status_code=404, detail="User not found")
             
             post_dict = post_data.dict()
             post_dict['id'] = str(uuid.uuid4())
@@ -115,19 +148,28 @@ def get_community_routes(get_current_user):
             }
             post_dict['time_ago'] = "Just now"
             
-            await database.create_document("community_posts", post_dict)
+            await database.create_document(COLLECTIONS["COMMUNITY_POSTS"], post_dict)
             
-            created_post = await database.get_document("community_posts", post_dict['id'])
+            created_post = await database.get_document(COLLECTIONS["COMMUNITY_POSTS"], post_dict['id'])
+            if not created_post:
+                raise HTTPException(status_code=500, detail="Failed to retrieve created community post")
             return format_document_for_response(created_post)
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in create_community_post: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to create community post: {e}")
             raise HTTPException(status_code=500, detail="Failed to create community post")
 
-    @router.get("/community-posts", response_model=List[CommunityPost])
-    async def get_community_posts():
+    @router.get("/community-posts", response_model=List[CommunityPost], responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_community_posts(request: Request = None):
         """Get all public community posts"""
         try:
-            posts = await database.get_documents("community_posts", limit=50)
+            posts = await database.get_documents(COLLECTIONS["COMMUNITY_POSTS"], limit=50)
             
             # Update time_ago for each post
             for post in posts:
@@ -139,14 +181,22 @@ def get_community_routes(get_current_user):
             
             return [format_document_for_response(post) for post in posts]
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in get_community_posts: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to get community posts: {e}")
             raise HTTPException(status_code=500, detail="Failed to get community posts")
 
-    @router.get("/community-posts/my", response_model=List[CommunityPost])
-    async def get_my_community_posts(current_user: str = Depends(get_current_user)):
+    @router.get("/community-posts/my", response_model=List[CommunityPost], responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_my_community_posts(
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Get current user's community posts"""
         try:
-            posts = await database.get_user_documents("community_posts", current_user)
+            posts = await database.get_user_documents(COLLECTIONS["COMMUNITY_POSTS"], current_user)
             
             # Update time_ago for each post
             for post in posts:
@@ -158,52 +208,78 @@ def get_community_routes(get_current_user):
             
             return [format_document_for_response(post) for post in posts]
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in get_my_community_posts: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to get user community posts: {e}")
             raise HTTPException(status_code=500, detail="Failed to get user community posts")
 
-    @router.post("/community-posts/{post_id}/like")
-    async def like_community_post(post_id: str, current_user: str = Depends(get_current_user)):
+    @router.post("/community-posts/{post_id}/like", responses={404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def like_community_post(
+        post_id: str,
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Like a community post"""
         try:
-            post = await database.get_document("community_posts", post_id)
+            post = await database.get_document(COLLECTIONS["COMMUNITY_POSTS"], post_id)
             if not post:
                 raise HTTPException(status_code=404, detail="Post not found")
             
             # Increment likes
             new_likes = post.get('likes', 0) + 1
-            success = await database.update_document("community_posts", post_id, {"likes": new_likes})
+            success = await database.update_document(COLLECTIONS["COMMUNITY_POSTS"], post_id, {"likes": new_likes})
             
             if not success:
                 raise HTTPException(status_code=404, detail="Post not found")
             
             return {"message": "Post liked successfully", "likes": new_likes}
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in like_community_post: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to like community post: {e}")
             raise HTTPException(status_code=500, detail="Failed to like post")
 
-    @router.delete("/community-posts/{post_id}")
-    async def delete_community_post(post_id: str, current_user: str = Depends(get_current_user)):
+    @router.delete("/community-posts/{post_id}", responses={404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def delete_community_post(
+        post_id: str,
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Delete a community post"""
         try:
-            post = await database.get_document("community_posts", post_id)
+            post = await database.get_document(COLLECTIONS["COMMUNITY_POSTS"], post_id)
             if not post or post.get('user_id') != current_user:
                 raise HTTPException(status_code=404, detail="Post not found")
             
-            success = await database.delete_document("community_posts", post_id)
+            success = await database.delete_document(COLLECTIONS["COMMUNITY_POSTS"], post_id)
             if not success:
                 raise HTTPException(status_code=404, detail="Post not found")
             
             return {"message": "Post deleted successfully"}
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in delete_community_post: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to delete community post: {e}")
             raise HTTPException(status_code=500, detail="Failed to delete post")
 
     # Template routes
-    @router.get("/templates", response_model=List[Template])
-    async def get_templates():
+    @router.get("/templates", response_model=List[Template], responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_templates(request: Request = None):
         """Get all available templates"""
         try:
-            # For MVP, return static templates
             templates = [
                 {
                     'id': '1',
@@ -288,13 +364,14 @@ def get_community_routes(get_current_user):
             return [format_document_for_response(template) for template in templates]
         
         except Exception as e:
+            logger.error(f"Failed to get templates: {e}")
             raise HTTPException(status_code=500, detail="Failed to get templates")
 
-    @router.get("/templates/{template_id}", response_model=Template)
-    async def get_template(template_id: str):
+    @router.get("/templates/{template_id}", response_model=Template, responses={404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_template(template_id: str, request: Request = None):
         """Get a specific template"""
         try:
-            # For MVP, return static template data
             templates = {
                 '1': {
                     'id': '1',
@@ -330,14 +407,19 @@ def get_community_routes(get_current_user):
             
             return format_document_for_response(template)
         
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to get template: {e}")
             raise HTTPException(status_code=500, detail="Failed to get template")
 
     # Template Session routes
-    @router.post("/template-sessions", response_model=TemplateSession)
+    @router.post("/template-sessions", response_model=TemplateSession, responses={400: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
     async def start_template_session(
         session_data: TemplateSessionCreate, 
-        current_user: str = Depends(get_current_user)
+        current_user: str = Depends(get_current_user),
+        request: Request = None
     ):
         """Start a new template session"""
         try:
@@ -345,30 +427,48 @@ def get_community_routes(get_current_user):
             session_dict['id'] = str(uuid.uuid4())
             session_dict['user_id'] = current_user
             
-            await database.create_document("template_sessions", session_dict)
+            await database.create_document(COLLECTIONS["TEMPLATE_SESSIONS"], session_dict)
             
-            created_session = await database.get_document("template_sessions", session_dict['id'])
+            created_session = await database.get_document(COLLECTIONS["TEMPLATE_SESSIONS"], session_dict['id'])
+            if not created_session:
+                raise HTTPException(status_code=500, detail="Failed to retrieve created template session")
             return format_document_for_response(created_session)
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in start_template_session: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to start template session: {e}")
             raise HTTPException(status_code=500, detail="Failed to start template session")
 
-    @router.get("/template-sessions", response_model=List[TemplateSession])
-    async def get_template_sessions(current_user: str = Depends(get_current_user)):
+    @router.get("/template-sessions", response_model=List[TemplateSession], responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_template_sessions(
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Get all template sessions for current user"""
         try:
-            sessions = await database.get_user_documents("template_sessions", current_user)
+            sessions = await database.get_user_documents(COLLECTIONS["TEMPLATE_SESSIONS"], current_user)
             return [format_document_for_response(session) for session in sessions]
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in get_template_sessions: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to get template sessions: {e}")
             raise HTTPException(status_code=500, detail="Failed to get template sessions")
 
-    @router.get("/template-sessions/active", response_model=Optional[TemplateSession])
-    async def get_active_template_session(current_user: str = Depends(get_current_user)):
+    @router.get("/template-sessions/active", response_model=Optional[TemplateSession], responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_active_template_session(
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Get active template session for current user"""
         try:
             sessions = await database.get_user_documents(
-                "template_sessions", 
+                COLLECTIONS["TEMPLATE_SESSIONS"], 
                 current_user, 
                 {"is_active": True}
             )
@@ -377,46 +477,69 @@ def get_community_routes(get_current_user):
                 return format_document_for_response(sessions[0])
             return None
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in get_active_template_session: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to get active template session: {e}")
             raise HTTPException(status_code=500, detail="Failed to get active template session")
 
-    @router.put("/template-sessions/{session_id}", response_model=TemplateSession)
+    @router.put("/template-sessions/{session_id}", response_model=TemplateSession, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
     async def update_template_session(
         session_id: str, 
         session_data: TemplateSessionUpdate, 
-        current_user: str = Depends(get_current_user)
+        current_user: str = Depends(get_current_user),
+        request: Request = None
     ):
         """Update a template session"""
         try:
-            session = await database.get_document("template_sessions", session_id)
+            session = await database.get_document(COLLECTIONS["TEMPLATE_SESSIONS"], session_id)
             if not session or session.get('user_id') != current_user:
                 raise HTTPException(status_code=404, detail="Template session not found")
             
             update_dict = {k: v for k, v in session_data.dict().items() if v is not None}
+            if not update_dict:
+                raise HTTPException(status_code=400, detail="No data to update")
             
-            success = await database.update_document("template_sessions", session_id, update_dict)
+            success = await database.update_document(COLLECTIONS["TEMPLATE_SESSIONS"], session_id, update_dict)
             if not success:
                 raise HTTPException(status_code=404, detail="Template session not found")
             
-            updated_session = await database.get_document("template_sessions", session_id)
+            updated_session = await database.get_document(COLLECTIONS["TEMPLATE_SESSIONS"], session_id)
             return format_document_for_response(updated_session)
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in update_template_session: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to update template session: {e}")
             raise HTTPException(status_code=500, detail="Failed to update template session")
 
     # Stats routes
-    @router.get("/stats", response_model=StatsResponse)
-    async def get_global_stats():
+    @router.get("/stats", response_model=StatsResponse, responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_global_stats(request: Request = None):
         """Get global application statistics"""
         try:
             stats = await database.get_global_stats()
             return stats
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in get_global_stats: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to get global stats: {e}")
             raise HTTPException(status_code=500, detail="Failed to get global stats")
 
-    @router.get("/stats/user", response_model=Dict)
-    async def get_user_stats(current_user: str = Depends(get_current_user)):
+    @router.get("/stats/user", response_model=Dict, responses={503: {"model": ErrorResponse}})
+    @limiter.limit("5/minute")
+    async def get_user_stats(
+        current_user: str = Depends(get_current_user),
+        request: Request = None
+    ):
         """Get current user statistics"""
         try:
             stats = await database.get_user_stats(current_user)
@@ -427,7 +550,11 @@ def get_community_routes(get_current_user):
                 "achievements": achievements
             }
         
+        except MongoConnectionError as e:
+            logger.error(f"Database connection error in get_user_stats: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable")
         except Exception as e:
+            logger.error(f"Failed to get user stats: {e}")
             raise HTTPException(status_code=500, detail="Failed to get user stats")
 
     return router
