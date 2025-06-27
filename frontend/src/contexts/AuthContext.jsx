@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check if user is logged in on app start
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -24,22 +23,14 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
-      
-      // Check if we have a stored user session
-      const storedUser = localStorage.getItem('manifestlife_user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        // Verify with backend using stored email
+      const token = localStorage.getItem('manifestlife_token');
+      if (token) {
         try {
-          const response = await userAPI.getCurrentUser(userData.email);
+          const response = await userAPI.getCurrentUser();
           setUser(response.data);
-          localStorage.setItem('manifestlife_user', JSON.stringify(response.data));
+          setIsAuthenticated(true);
         } catch (error) {
-          // If backend call fails, clear stored data
-          localStorage.removeItem('manifestlife_user');
+          localStorage.removeItem('manifestlife_token');
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -53,38 +44,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, name) => {
+  const login = async (email, password) => {
     try {
       setLoading(true);
-      
-      // Try to get existing user or create new one
-      let userData;
-      try {
-        const response = await userAPI.getCurrentUser(email);
-        userData = response.data;
-      } catch (error) {
-        if (error.response?.status === 404) {
-          // User doesn't exist, create new one
-          const createResponse = await userAPI.createUser({
-            email,
-            name,
-            bio: `Welcome to ManifestLife! I'm ${name} and I'm excited to start my manifestation journey.`,
-            location: '',
-            website: ''
-          });
-          userData = createResponse.data;
-        } else {
-          throw error; // Other errors (e.g., network issues, bad request)
-        }
-      }
-
-      setUser(userData);
+      const response = await userAPI.login({ username: email, password });
+      const { access_token } = response.data;
+      localStorage.setItem('manifestlife_token', access_token);
+      userAPI.setToken(access_token);
+      const userResponse = await userAPI.getCurrentUser();
+      setUser(userResponse.data);
       setIsAuthenticated(true);
-      
-      // Store in localStorage
-      localStorage.setItem('manifestlife_user', JSON.stringify(userData));
-      
-      return userData;
+      return userResponse.data;
     } catch (error) {
       console.error('Login failed:', error);
       throw new Error(error.response?.data?.detail || 'Login failed');
@@ -96,7 +66,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('manifestlife_user');
+    localStorage.removeItem('manifestlife_token');
+    userAPI.setToken(null);
   };
 
   const updateUser = async (updatedData) => {
