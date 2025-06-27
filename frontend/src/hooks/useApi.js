@@ -229,4 +229,30 @@ export const useVisionBoards = () => {
 
 // Hook for templates data
 export const useTemplates = () => {
-  const
+  const { data: templates, loading, error, refetch: refetchTemplates } = useApi(
+    () => templatesAPI.getTemplates(),
+    [],
+    { defaultData: [] }
+  );
+  return { templates, loading, error, refetchTemplates };
+};
+
+// Hook for global stats
+export const useGlobalStats = () => {
+  const { data: stats, loading, error, refetch: refetchStats } = useApi(
+    () => statsAPI.getGlobalStats(),
+    [],
+    { defaultData: {} }
+  );
+  return { stats, loading, error, refetchStats };
+};
+
+// Hook for user stats
+export const useUserStats = () => {
+  const { data: stats, loading, error, refetch: refetchStats } = useApi(
+    () => statsAPI.getUserStats(),
+    [],
+    { defaultData: {} }
+  );
+  return { stats, loading, error, refetchStats };
+};
