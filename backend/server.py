@@ -25,7 +25,14 @@ async def lifespan(app: FastAPI):
     await database.disconnect()
 
 # Create the main app
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title="ManifestLife API",
+    description="API for managing user profiles and goals",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 # Create a router with the /api prefix
 app.include_router(api_router, prefix='/api')
