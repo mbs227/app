@@ -10,22 +10,66 @@ const api = axios.create({
   },
 });
 
-let token = null;
 
+
+// Token management
+let token = null;
+export const setToken = (newToken) => {
+  token = newToken;
+};
+
+// Request interceptor to add Authorization header and debug
 api.interceptors.request.use(
   (config) => {
-    if (token) {
+    if (token && config.url !== '/token') { // Avoid token on login
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log('Request Details:', {
+      method: config.method.toUpperCase(),
+      url: config.url,
+      headers: config.headers,
+      data: config.data,
+      timestamp: new Date().toISOString(),
+    }); // Detailed debug log
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// Response interceptor to handle errors with detailed logging
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('Response Details:', {
+      url: response.config.url,
+      method: response.config.method,
+      status: response.status,
+      data: response.data,
+      timestamp: new Date().toISOString(),
+    });
+    return response;
+  },
   (error) => {
-    console.error('API Error:', error);
+    const { response } = error;
+    if (response) {
+      console.error('API Error Details:', {
+        url: response.config.url,
+        method: response.config.method,
+        status: response.status,
+        data: response.data,
+        headers: response.headers,
+        timestamp: new Date().toISOString(),
+      });
+      if (response.status === 401) {
+        console.warn('Unauthorized - token may be invalid or expired');
+      } else if (response.status === 405) {
+        console.warn('Method Not Allowed - check server configuration and allowed methods:', response.headers.allow);
+      }
+    } else {
+      console.error('API Error (no response):', {
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
     return Promise.reject(error);
   }
 );
