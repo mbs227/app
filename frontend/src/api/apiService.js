@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-// Backend API configuration - get directly from environment
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://app-seven-mu-88.vercel.app';
-const API_BASE_URL = `${BACKEND_URL}/api`;
+const API_BASE_URL = `${BACKEND_URL}/api/v1`;
 
-// Create axios instance with base configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -12,7 +10,18 @@ const api = axios.create({
   },
 });
 
-// Response interceptor to handle errors
+let token = null;
+
+api.interceptors.request.use(
+  (config) => {
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -21,21 +30,24 @@ api.interceptors.response.use(
   }
 );
 
-// User API
 export const userAPI = {
-  getCurrentUser: async (email) => {
-    return await axios.get(`${API_BASE_URL}/users/me`, { params: { email } });
+  setToken: (newToken) => {
+    token = newToken;
+  },
+  login: async (credentials) => {
+    return await api.post('/token', credentials);
+  },
+  getCurrentUser: async () => {
+    return await api.get('/users/me');
   },
   createUser: async (userData) => {
-    return await axios.post(`${API_BASE_URL}/users`, userData);
+    return await api.post('/users', userData);
   },
   updateUser: async (userData) => {
-    return await axios.put(`${API_BASE_URL}/users/me`, userData);
-  }
+    return await api.put('/users/me', userData);
+  },
 };
 
-
-// Goals API
 export const goalsAPI = {
   getGoals: () => api.get('/goals'),
   getGoal: (id) => api.get(`/goals/${id}`),
@@ -44,7 +56,6 @@ export const goalsAPI = {
   deleteGoal: (id) => api.delete(`/goals/${id}`),
 };
 
-// Vision Boards API
 export const visionBoardAPI = {
   getVisionBoards: () => api.get('/vision-boards'),
   getVisionBoard: (id) => api.get(`/vision-boards/${id}`),
@@ -53,7 +64,6 @@ export const visionBoardAPI = {
   deleteVisionBoard: (id) => api.delete(`/vision-boards/${id}`),
 };
 
-// Journal API
 export const journalAPI = {
   getJournalEntries: () => api.get('/journal-entries'),
   getJournalEntry: (id) => api.get(`/journal-entries/${id}`),
@@ -63,7 +73,6 @@ export const journalAPI = {
   likeJournalEntry: (id) => api.post(`/journal-entries/${id}/like`),
 };
 
-// Affirmations API
 export const affirmationsAPI = {
   getAffirmations: () => api.get('/affirmations'),
   getAffirmation: (id) => api.get(`/affirmations/${id}`),
@@ -72,7 +81,6 @@ export const affirmationsAPI = {
   deleteAffirmation: (id) => api.delete(`/affirmations/${id}`),
 };
 
-// Habits API
 export const habitsAPI = {
   getHabits: () => api.get('/habits'),
   getHabit: (id) => api.get(`/habits/${id}`),
@@ -82,7 +90,6 @@ export const habitsAPI = {
   toggleHabitCompletion: (id) => api.post(`/habits/${id}/toggle`),
 };
 
-// Gratitude API
 export const gratitudeAPI = {
   getGratitudeEntries: () => api.get('/gratitude-entries'),
   getGratitudeEntry: (id) => api.get(`/gratitude-entries/${id}`),
@@ -91,7 +98,6 @@ export const gratitudeAPI = {
   deleteGratitudeEntry: (id) => api.delete(`/gratitude-entries/${id}`),
 };
 
-// Community API
 export const communityAPI = {
   getCommunityPosts: () => api.get('/community-posts'),
   getMyCommunityPosts: () => api.get('/community-posts/my'),
@@ -102,13 +108,11 @@ export const communityAPI = {
   likeCommunityPost: (id) => api.post(`/community-posts/${id}/like`),
 };
 
-// Templates API
 export const templatesAPI = {
   getTemplates: () => api.get('/templates'),
   getTemplate: (id) => api.get(`/templates/${id}`),
 };
 
-// Template Sessions API
 export const templateSessionsAPI = {
   getTemplateSessions: () => api.get('/template-sessions'),
   getActiveTemplateSession: () => api.get('/template-sessions/active'),
@@ -116,13 +120,11 @@ export const templateSessionsAPI = {
   updateTemplateSession: (id, sessionData) => api.put(`/template-sessions/${id}`, sessionData),
 };
 
-// Stats API
 export const statsAPI = {
   getGlobalStats: () => api.get('/stats'),
   getUserStats: () => api.get('/stats/user'),
 };
 
-// Health API
 export const healthAPI = {
   getHealth: () => api.get('/health'),
   getRoot: () => api.get('/'),
