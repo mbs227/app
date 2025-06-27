@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
-  User, 
   Mail, 
+  Lock, 
   Sparkles, 
   LogIn,
   UserPlus,
@@ -17,8 +17,8 @@ import { useToast } from '../../hooks/use-toast';
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: ''
+    email: '',
+    password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -27,7 +27,7 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.name) {
+    if (!formData.email || !formData.password) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields",
@@ -38,7 +38,7 @@ export default function LoginForm() {
 
     setIsLoading(true);
     try {
-      await login(formData.email, formData.name);
+      await login(formData.email, formData.password);
       toast({
         title: "Welcome to ManifestLife! ✨",
         description: "You're now ready to start your manifestation journey",
@@ -47,7 +47,7 @@ export default function LoginForm() {
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: error.message || "Something went wrong. Please try again.",
+        description: error.message || "Invalid email or password. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -58,10 +58,10 @@ export default function LoginForm() {
   const handleQuickLogin = async (preset) => {
     setIsLoading(true);
     try {
-      await login(preset.email, preset.name);
+      await login(preset.email, preset.password);
       toast({
         title: "Welcome to ManifestLife! ✨",
-        description: `Logged in as ${preset.name}`,
+        description: `Logged in as ${preset.email}`,
         variant: "default",
       });
     } catch (error) {
@@ -76,15 +76,14 @@ export default function LoginForm() {
   };
 
   const presetUsers = [
-    { name: 'Sarah Johnson', email: 'sarah@example.com' },
-    { name: 'Alex Chen', email: 'alex@example.com' },
-    { name: 'Emma Rodriguez', email: 'emma@example.com' }
+    { email: 'sarah@example.com', password: 'password123' },
+    { email: 'alex@example.com', password: 'password123' },
+    { email: 'emma@example.com', password: 'password123' }
   ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4">
       <div className="w-full max-w-md space-y-6">
-        {/* Logo and Header */}
         <div className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -121,22 +120,6 @@ export default function LoginForm() {
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="pl-10"
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -152,6 +135,22 @@ export default function LoginForm() {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        className="pl-10"
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
@@ -160,12 +159,12 @@ export default function LoginForm() {
                     {isLoading ? (
                       <>
                         <Loader className="w-4 h-4 mr-2 animate-spin" />
-                        Creating your manifestation space...
+                        Signing in...
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4 mr-2" />
-                        Begin My Journey
+                        Sign In
                       </>
                     )}
                   </Button>
@@ -188,11 +187,11 @@ export default function LoginForm() {
                     >
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                          {preset.name.split(' ').map(n => n[0]).join('')}
+                          {preset.email.split('@')[0].slice(0, 2).toUpperCase()}
                         </div>
                         <div className="text-left">
-                          <div className="font-medium">{preset.name}</div>
-                          <div className="text-xs text-gray-500">{preset.email}</div>
+                          <div className="font-medium">{preset.email}</div>
+                          <div className="text-xs text-gray-500">Demo Account</div>
                         </div>
                       </div>
                     </Button>
@@ -204,7 +203,7 @@ export default function LoginForm() {
         </Card>
 
         <div className="text-center text-sm text-gray-500">
-          <p>✨ No passwords required - Just your name and email ✨</p>
+          <p>✨ Secure login with your email and password ✨</p>
           <p className="mt-1">Your manifestation journey is private and secure</p>
         </div>
       </div>
