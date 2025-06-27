@@ -26,8 +26,8 @@ from backend.constants import COLLECTIONS
 class Settings(BaseSettings):
     database_url: str
     secret_key: str
-    allowed_origins: str = "http://localhost:3000,https://your-frontend.com"
-    redis_url: str = "redis://localhost"
+    allowed_origins: str = "https://app-seven-mu-88.vercel.app"
+    redis_url: str = "redis://app-seven-mu-88.vercel.app"
     environment: str = "production"
 
     class Config:
