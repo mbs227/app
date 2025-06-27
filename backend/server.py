@@ -18,10 +18,10 @@ load_dotenv(ROOT_DIR / '.env')
 # Database lifecycle
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    await database.connect()
+   await database.connect()
+    await database.create_index("users", "email", unique=True)
+    await database.create_index("goals", "user_id")
     yield
-    # Shutdown
     await database.disconnect()
 
 # Create the main app
