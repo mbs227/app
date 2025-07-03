@@ -87,7 +87,77 @@ class Cycle(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-# Legacy Models
+# Goal Models
+class Milestone(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    completed: bool = False
+    completed_date: Optional[datetime] = None
+
+class GoalCreate(BaseModel):
+    title: str
+    description: str
+    category: str
+    start_week: int = 1
+    target_week: int = 12
+    why_statement: str  # Law of Attraction "why"
+    visualization_note: str  # Neville Goddard visualization
+    milestones: List[Milestone] = []
+
+class Goal(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    cycle_id: str
+    user_id: str
+    title: str
+    description: str
+    category: str
+    start_week: int = 1
+    target_week: int = 12
+    progress: int = 0  # 0-100
+    status: str = "not_started"  # not_started, in_progress, completed, on_hold
+    why_statement: str  # Law of Attraction
+    visualization_note: str  # Neville Goddard
+    milestones: List[Milestone] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class GoalUpdate(BaseModel):
+    progress: Optional[int] = None
+    status: Optional[str] = None
+    milestones: Optional[List[Milestone]] = None
+
+# Weekly Reflection Models  
+class WeeklyReflectionCreate(BaseModel):
+    cycle_id: str
+    week_number: int
+    progress_review: str
+    law_of_attraction_manifestations: List[str] = []
+    neville_goddard_practice: str
+    challenges: str
+    insights: str
+    next_week_focus: List[str] = []
+    mood_rating: int = 5  # 1-10 scale
+
+class WeeklyReflection(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    cycle_id: str
+    user_id: str
+    week_number: int
+    week_start_date: datetime
+    progress_review: str
+    law_of_attraction_manifestations: List[str] = []
+    neville_goddard_practice: str
+    challenges: str
+    insights: str
+    next_week_focus: List[str] = []
+    mood_rating: int = 5
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Enhanced Cycle Models
+class CycleUpdate(BaseModel):
+    current_week: Optional[int] = None
+    status: Optional[str] = None
+    law_of_attraction_statement: Optional[str] = None
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     client_name: str
