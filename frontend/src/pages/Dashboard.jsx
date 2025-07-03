@@ -60,6 +60,20 @@ const Dashboard = () => {
     fetchData(); // Refresh data
   };
 
+  const handleGoalUpdated = (updatedGoal) => {
+    setGoals(goals.map(g => g.id === updatedGoal.id ? updatedGoal : g));
+    fetchData(); // Refresh data
+  };
+
+  const handleReflectionCreated = (newReflection) => {
+    fetchData(); // Refresh data
+  };
+
+  const handleOpenGoalDetails = (goal) => {
+    setSelectedGoal(goal);
+    setShowGoalDetails(true);
+  };
+
   const handleLogout = () => {
     logout();
   };
