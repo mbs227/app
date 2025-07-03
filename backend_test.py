@@ -882,6 +882,24 @@ def run_all_tests():
     reflections = test_get_reflections(token, cycle_id)
     specific_reflection = test_get_specific_reflection(token, reflection_id)
     
+    # Test 17-19: Enhanced Goal Progress APIs
+    updated_goal_progress = test_update_goal_progress(token, goal_id)
+    if not updated_goal_progress:
+        print("\n❌ Goal Progress Update failed. Stopping tests.")
+        return summarize_results()
+    
+    updated_goal_with_milestones = test_update_goal_progress_with_milestones(token, goal_id)
+    goal_progress_history = test_get_goal_progress_history(token, goal_id)
+    
+    # Test 20: Cycle Analytics
+    cycle_analytics = test_get_cycle_analytics(token, cycle_id)
+    
+    # Test 21: Dashboard Analytics
+    dashboard_analytics = test_get_dashboard_analytics(token)
+    
+    # Test 22: Cycle Completion
+    completed_cycle = test_complete_cycle(token, cycle_id)
+    
     # Test Error Handling
     test_error_handling_duplicate_email()
     test_error_handling_invalid_login()
