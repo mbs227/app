@@ -285,7 +285,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard Component (Phase 1)"
+    - "Goal Database Models & API"
+    - "Cycle Creation Component"
+    - "Goal Creation & Management Components"
+    - "12-Week Calendar Grid Component"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
