@@ -478,6 +478,111 @@ def test_update_goal(token, goal_id):
         log_test("Update Goal", False, f"Exception: {str(e)}")
         return None
 
+def test_update_goal_progress(token, goal_id):
+    """Test 17: Enhanced Goal Progress - Update Progress with Notes"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        progress_update = {
+            "progress": 50,
+            "notes": "Made significant progress this week with consistent practice",
+            "milestone_updates": None  # We'll test milestone updates separately
+        }
+        
+        response = requests.post(
+            f"{API_BASE_URL}/goals/{goal_id}/progress",
+            headers=headers,
+            json=progress_update
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data["progress"] == progress_update["progress"]:
+                log_test("Update Goal Progress", True, "Successfully updated goal progress with notes")
+                return data
+            else:
+                log_test("Update Goal Progress", False, "Response data doesn't match expected progress value", response)
+                return None
+        else:
+            log_test("Update Goal Progress", False, f"Failed to update goal progress with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Update Goal Progress", False, f"Exception: {str(e)}")
+        return None
+
+def test_update_goal_progress_with_milestones(token, goal_id):
+    """Test 18: Enhanced Goal Progress - Update Progress with Milestone Tracking"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # First get the current goal to get the milestone IDs
+        goal_response = requests.get(f"{API_BASE_URL}/goals/{goal_id}", headers=headers)
+        if goal_response.status_code != 200:
+            log_test("Update Goal Progress with Milestones", False, "Failed to get current goal data", goal_response)
+            return None
+            
+        current_goal = goal_response.json()
+        milestones = current_goal["milestones"]
+        
+        if len(milestones) < 2:
+            log_test("Update Goal Progress with Milestones", False, "Not enough milestones to test with")
+            return None
+        
+        # Update the second milestone to completed
+        milestones[1]["completed"] = True
+        milestones[1]["completed_date"] = datetime.utcnow().isoformat()
+        
+        progress_update = {
+            "progress": 75,
+            "notes": "Completed the second milestone! Moving to the final stage.",
+            "milestone_updates": milestones
+        }
+        
+        response = requests.post(
+            f"{API_BASE_URL}/goals/{goal_id}/progress",
+            headers=headers,
+            json=progress_update
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if (data["progress"] == progress_update["progress"] and 
+                data["milestones"][1]["completed"] == True):
+                log_test("Update Goal Progress with Milestones", True, "Successfully updated goal progress with milestone tracking")
+                return data
+            else:
+                log_test("Update Goal Progress with Milestones", False, "Response data doesn't match expected values", response)
+                return None
+        else:
+            log_test("Update Goal Progress with Milestones", False, f"Failed to update goal progress with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Update Goal Progress with Milestones", False, f"Exception: {str(e)}")
+        return None
+
+def test_get_goal_progress_history(token, goal_id):
+    """Test 19: Enhanced Goal Progress - Get Progress History"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(
+            f"{API_BASE_URL}/goals/{goal_id}/progress-history",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "goal_id" in data and data["goal_id"] == goal_id and "snapshots" in data:
+                log_test("Get Goal Progress History", True, f"Successfully retrieved progress history with {len(data['snapshots'])} snapshots")
+                return data
+            else:
+                log_test("Get Goal Progress History", False, "Response data doesn't match expected structure", response)
+                return None
+        else:
+            log_test("Get Goal Progress History", False, f"Failed to get progress history with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Get Goal Progress History", False, f"Exception: {str(e)}")
+        return None
+
 def test_create_reflection(token, cycle_id):
     """Test 14: Weekly Reflection - Create Reflection"""
     try:
