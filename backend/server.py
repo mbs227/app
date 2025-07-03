@@ -95,6 +95,7 @@ class Milestone(BaseModel):
     completed_date: Optional[datetime] = None
 
 class GoalCreate(BaseModel):
+    cycle_id: str
     title: str
     description: str
     category: str
