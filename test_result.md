@@ -294,7 +294,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Goal Database Models & API"
     - "Cycle Creation Component"
     - "Goal Creation & Management Components"
     - "12-Week Calendar Grid Component"
