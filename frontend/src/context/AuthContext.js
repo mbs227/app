@@ -63,14 +63,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const response = await axios.post(`${API}/auth/login`, credentials);
-      const { access_token, user: userData } = response.data;
+      const { access_token, user: userResponse } = response.data;
       
       setToken(access_token);
-      setUser(userData);
+      setUser(userResponse);
       localStorage.setItem('token', access_token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       
-      return { success: true, user: userData };
+      return { success: true, user: userResponse };
     } catch (error) {
       console.error('Login error:', error);
       return { 
