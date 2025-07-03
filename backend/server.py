@@ -154,7 +154,47 @@ class WeeklyReflection(BaseModel):
     mood_rating: int = 5
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-# Enhanced Cycle Models
+# Enhanced Analytics Models
+class GoalProgressSnapshot(BaseModel):
+    date: datetime
+    progress: int
+    notes: str = ""
+
+class GoalProgressHistory(BaseModel):
+    goal_id: str
+    snapshots: List[GoalProgressSnapshot] = []
+
+class CycleAnalytics(BaseModel):
+    cycle_id: str
+    completion_rate: float
+    goals_completed: int
+    goals_total: int
+    average_mood: float
+    manifestation_count: int
+    weeks_completed: int
+    start_date: datetime
+    current_week: int
+
+class DashboardAnalytics(BaseModel):
+    total_cycles: int
+    active_cycles: int
+    completed_cycles: int
+    total_goals: int
+    completed_goals: int
+    average_completion_rate: float
+    recent_manifestations: List[str] = []
+    mood_trend: List[int] = []
+
+# Enhanced Models
+class GoalProgressUpdate(BaseModel):
+    progress: int
+    notes: str = ""
+    milestone_updates: Optional[List[Milestone]] = None
+
+class CycleComplete(BaseModel):
+    completion_notes: str
+    success_story: str = ""
+    overall_satisfaction: int = 5  # 1-10 scale
 class CycleUpdate(BaseModel):
     current_week: Optional[int] = None
     status: Optional[str] = None
