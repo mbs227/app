@@ -206,7 +206,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Current Cycles */}
+            {/* Current Cycles with Progress Rings */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Your 12-Week Cycles</h3>
               
@@ -225,49 +225,70 @@ const Dashboard = () => {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {cycles.map((cycle) => (
-                    <div 
-                      key={cycle.id} 
-                      onClick={() => setSelectedCycle(cycle)}
-                      className={`border-2 rounded-lg p-4 hover:border-purple-300 transition-colors cursor-pointer ${
-                        selectedCycle?.id === cycle.id ? 'border-purple-400 bg-purple-50' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-lg font-medium text-gray-900">{cycle.title}</h4>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          cycle.status === 'active' ? 'bg-purple-100 text-purple-800' :
-                          cycle.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {cycle.status}
-                        </span>
-                      </div>
-                      <p className="text-gray-600 mb-3">{cycle.description}</p>
-                      
-                      {/* Progress Bar */}
-                      <div className="mb-3">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-500">Week {cycle.current_week}/12</span>
-                          <span className="text-sm font-medium text-gray-700">{Math.round((cycle.current_week / 12) * 100)}%</span>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Progress Rings for Active Cycles */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-700">Progress Overview</h4>
+                    <div className="flex flex-wrap gap-4">
+                      {activeCycles.map((cycle) => (
+                        <div key={cycle.id} onClick={() => setSelectedCycle(cycle)} className="cursor-pointer">
+                          <CycleProgressRing
+                            progress={(cycle.current_week / 12) * 100}
+                            currentWeek={cycle.current_week}
+                            totalWeeks={12}
+                            cycleTitle={cycle.title}
+                            size={100}
+                          />
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${(cycle.current_week / 12) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      {/* Law of Attraction Statement */}
-                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
-                        <p className="text-sm text-gray-700 italic">
-                          💫 "{cycle.law_of_attraction_statement}"
-                        </p>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Cycle Details */}
+                  <div className="space-y-4">
+                    {cycles.map((cycle) => (
+                      <div 
+                        key={cycle.id} 
+                        onClick={() => setSelectedCycle(cycle)}
+                        className={`border-2 rounded-lg p-4 hover:border-purple-300 transition-colors cursor-pointer ${
+                          selectedCycle?.id === cycle.id ? 'border-purple-400 bg-purple-50' : 'border-gray-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="text-lg font-medium text-gray-900">{cycle.title}</h4>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            cycle.status === 'active' ? 'bg-purple-100 text-purple-800' :
+                            cycle.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {cycle.status}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mb-3 text-sm">{cycle.description}</p>
+                        
+                        {/* Progress Bar */}
+                        <div className="mb-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm text-gray-500">Week {cycle.current_week}/12</span>
+                            <span className="text-sm font-medium text-gray-700">{Math.round((cycle.current_week / 12) * 100)}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${(cycle.current_week / 12) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Law of Attraction Statement */}
+                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
+                          <p className="text-sm text-gray-700 italic">
+                            💫 "{cycle.law_of_attraction_statement}"
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
