@@ -196,7 +196,7 @@ backend:
           comment: "API endpoints for goal progress history, analytics, and milestone tracking over time"
         - working: true
           agent: "testing"
-          comment: "✅ Goal Progress History API fully functional. Successfully tested POST /api/goals/{goal_id}/progress for updating progress with notes and milestone tracking, and GET /api/goals/{goal_id}/progress-history for retrieving goal progress history over time. Progress snapshots are correctly saved with timestamps and notes, and history is retrieved accurately."
+          comment: "✅ Goal progress APIs fully functional. Progress snapshots, history tracking, and milestone updates working correctly."
 
   - task: "Cycle Completion & Analytics API"
     implemented: true
@@ -211,7 +211,7 @@ backend:
           comment: "API for cycle completion flow, analytics, and archival system"
         - working: true
           agent: "testing"
-          comment: "✅ Cycle Completion & Analytics APIs fully functional. Successfully tested GET /api/cycles/{cycle_id}/analytics for comprehensive cycle analytics (completion rate, mood averages, manifestation counts), GET /api/analytics/dashboard for user dashboard analytics (aggregating data across all user cycles and goals), and POST /api/cycles/{cycle_id}/complete for completing a cycle with success story. All calculations are mathematically correct and data persistence works properly."
+          comment: "✅ Cycle analytics and completion APIs working correctly. Dashboard analytics, cycle completion with success stories, and comprehensive analytics calculations all functional."
 
 frontend:
   - task: "Authentication Components (Login/Register)"
