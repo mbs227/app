@@ -316,7 +316,11 @@ const Dashboard = () => {
                 >
                   View Calendar
                 </button>
-                <button className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 rounded-lg font-medium hover:from-green-700 hover:to-blue-700 transition-all duration-200">
+                <button 
+                  onClick={() => setShowWeeklyCheckIn(true)}
+                  disabled={!selectedCycle || selectedCycle.status !== 'active'}
+                  className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 rounded-lg font-medium hover:from-green-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   Weekly Check-in
                 </button>
               </div>
