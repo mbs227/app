@@ -291,6 +291,125 @@ async def get_cycle(cycle_id: str, current_user: User = Depends(get_current_user
         raise HTTPException(status_code=404, detail="Cycle not found")
     return Cycle(**cycle)
 
+@api_router.put("/cycles/{cycle_id}", response_model=Cycle)
+async def update_cycle(cycle_id: str, cycle_update: CycleUpdate, current_user: User = Depends(get_current_user)):
+    cycle = await db.cycles.find_one({"id": cycle_id, "user_id": current_user.id})
+    if not cycle:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+    
+    update_data = cycle_update.dict(exclude_unset=True)
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.cycles.update_one(
+        {"id": cycle_id, "user_id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    updated_cycle = await db.cycles.find_one({"id": cycle_id, "user_id": current_user.id})
+    return Cycle(**updated_cycle)
+
+# Goal Management Routes
+@api_router.post("/goals", response_model=Goal)
+async def create_goal(goal_data: GoalCreate, current_user: User = Depends(get_current_user)):
+    # Verify cycle belongs to user
+    cycle = await db.cycles.find_one({"id": goal_data.cycle_id, "user_id": current_user.id})
+    if not cycle:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+    
+    goal = Goal(
+        cycle_id=goal_data.cycle_id,
+        user_id=current_user.id,
+        title=goal_data.title,
+        description=goal_data.description,
+        category=goal_data.category,
+        start_week=goal_data.start_week,
+        target_week=goal_data.target_week,
+        why_statement=goal_data.why_statement,
+        visualization_note=goal_data.visualization_note,
+        milestones=goal_data.milestones
+    )
+    
+    await db.goals.insert_one(goal.dict())
+    return goal
+
+@api_router.get("/goals", response_model=List[Goal])
+async def get_user_goals(cycle_id: str = None, current_user: User = Depends(get_current_user)):
+    query = {"user_id": current_user.id}
+    if cycle_id:
+        query["cycle_id"] = cycle_id
+    
+    goals = await db.goals.find(query).to_list(1000)
+    return [Goal(**goal) for goal in goals]
+
+@api_router.get("/goals/{goal_id}", response_model=Goal)
+async def get_goal(goal_id: str, current_user: User = Depends(get_current_user)):
+    goal = await db.goals.find_one({"id": goal_id, "user_id": current_user.id})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    return Goal(**goal)
+
+@api_router.put("/goals/{goal_id}", response_model=Goal)
+async def update_goal(goal_id: str, goal_update: GoalUpdate, current_user: User = Depends(get_current_user)):
+    goal = await db.goals.find_one({"id": goal_id, "user_id": current_user.id})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    update_data = goal_update.dict(exclude_unset=True)
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.goals.update_one(
+        {"id": goal_id, "user_id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    updated_goal = await db.goals.find_one({"id": goal_id, "user_id": current_user.id})
+    return Goal(**updated_goal)
+
+# Weekly Reflection Routes
+@api_router.post("/reflections", response_model=WeeklyReflection)
+async def create_reflection(reflection_data: WeeklyReflectionCreate, current_user: User = Depends(get_current_user)):
+    # Verify cycle belongs to user
+    cycle = await db.cycles.find_one({"id": reflection_data.cycle_id, "user_id": current_user.id})
+    if not cycle:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+    
+    # Calculate week start date based on cycle start date and week number
+    cycle_start = cycle["start_date"]
+    week_start_date = cycle_start + timedelta(weeks=reflection_data.week_number - 1)
+    
+    reflection = WeeklyReflection(
+        cycle_id=reflection_data.cycle_id,
+        user_id=current_user.id,
+        week_number=reflection_data.week_number,
+        week_start_date=week_start_date,
+        progress_review=reflection_data.progress_review,
+        law_of_attraction_manifestations=reflection_data.law_of_attraction_manifestations,
+        neville_goddard_practice=reflection_data.neville_goddard_practice,
+        challenges=reflection_data.challenges,
+        insights=reflection_data.insights,
+        next_week_focus=reflection_data.next_week_focus,
+        mood_rating=reflection_data.mood_rating
+    )
+    
+    await db.reflections.insert_one(reflection.dict())
+    return reflection
+
+@api_router.get("/reflections", response_model=List[WeeklyReflection])
+async def get_reflections(cycle_id: str = None, current_user: User = Depends(get_current_user)):
+    query = {"user_id": current_user.id}
+    if cycle_id:
+        query["cycle_id"] = cycle_id
+    
+    reflections = await db.reflections.find(query).sort("week_number", 1).to_list(1000)
+    return [WeeklyReflection(**reflection) for reflection in reflections]
+
+@api_router.get("/reflections/{reflection_id}", response_model=WeeklyReflection)
+async def get_reflection(reflection_id: str, current_user: User = Depends(get_current_user)):
+    reflection = await db.reflections.find_one({"id": reflection_id, "user_id": current_user.id})
+    if not reflection:
+        raise HTTPException(status_code=404, detail="Reflection not found")
+    return WeeklyReflection(**reflection)
+
 # Legacy Routes (keeping for backward compatibility)
 @api_router.get("/")
 async def root():
