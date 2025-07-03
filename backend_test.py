@@ -659,6 +659,93 @@ def test_get_specific_reflection(token, reflection_id):
         log_test("Get Specific Reflection", False, f"Exception: {str(e)}")
         return None
 
+def test_get_cycle_analytics(token, cycle_id):
+    """Test 20: Cycle Analytics - Get Comprehensive Analytics"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(
+            f"{API_BASE_URL}/cycles/{cycle_id}/analytics",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if ("cycle_id" in data and data["cycle_id"] == cycle_id and
+                "completion_rate" in data and "goals_completed" in data and
+                "average_mood" in data and "manifestation_count" in data):
+                log_test("Get Cycle Analytics", True, f"Successfully retrieved cycle analytics with completion rate: {data['completion_rate']:.1f}%")
+                return data
+            else:
+                log_test("Get Cycle Analytics", False, "Response data doesn't match expected analytics structure", response)
+                return None
+        else:
+            log_test("Get Cycle Analytics", False, f"Failed to get cycle analytics with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Get Cycle Analytics", False, f"Exception: {str(e)}")
+        return None
+
+def test_get_dashboard_analytics(token):
+    """Test 21: Dashboard Analytics - Get User Dashboard Analytics"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(
+            f"{API_BASE_URL}/analytics/dashboard",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if ("total_cycles" in data and "active_cycles" in data and
+                "completed_cycles" in data and "total_goals" in data and
+                "completed_goals" in data and "average_completion_rate" in data and
+                "recent_manifestations" in data and "mood_trend" in data):
+                log_test("Get Dashboard Analytics", True, f"Successfully retrieved dashboard analytics with {data['total_cycles']} cycles and {data['total_goals']} goals")
+                return data
+            else:
+                log_test("Get Dashboard Analytics", False, "Response data doesn't match expected dashboard analytics structure", response)
+                return None
+        else:
+            log_test("Get Dashboard Analytics", False, f"Failed to get dashboard analytics with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Get Dashboard Analytics", False, f"Exception: {str(e)}")
+        return None
+
+def test_complete_cycle(token, cycle_id):
+    """Test 22: Cycle Completion - Complete Cycle with Success Story"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        completion_data = {
+            "completion_notes": "This 12-week journey has been transformative. I've achieved most of my goals and developed new habits.",
+            "success_story": "My biggest success was establishing a daily meditation practice that has improved my focus and manifestation abilities.",
+            "overall_satisfaction": 9
+        }
+        
+        response = requests.post(
+            f"{API_BASE_URL}/cycles/{cycle_id}/complete",
+            headers=headers,
+            json=completion_data
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if (data["status"] == "completed" and 
+                "completion_notes" in data and data["completion_notes"] == completion_data["completion_notes"] and
+                "success_story" in data and data["success_story"] == completion_data["success_story"] and
+                "overall_satisfaction" in data and data["overall_satisfaction"] == completion_data["overall_satisfaction"]):
+                log_test("Complete Cycle", True, "Successfully completed cycle with success story")
+                return data
+            else:
+                log_test("Complete Cycle", False, "Response data doesn't match expected completion data", response)
+                return None
+        else:
+            log_test("Complete Cycle", False, f"Failed to complete cycle with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Complete Cycle", False, f"Exception: {str(e)}")
+        return None
+
 def test_error_handling_duplicate_email():
     """Test 8a: Error Handling - Duplicate Email"""
     try:
