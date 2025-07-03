@@ -151,6 +151,16 @@ const Dashboard = () => {
             >
               Goals & Progress
             </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'analytics'
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Analytics
+            </button>
           </div>
         </div>
       </div>
