@@ -321,12 +321,11 @@ def test_create_goal(token, cycle_id):
     try:
         headers = {"Authorization": f"Bearer {token}"}
         goal_data = TEST_GOAL.copy()
-        goal_data["cycle_id"] = cycle_id
         
         response = requests.post(
             f"{API_BASE_URL}/goals",
             headers=headers,
-            json=goal_data
+            json={**goal_data, "cycle_id": cycle_id}
         )
         
         if response.status_code == 200:
@@ -349,12 +348,11 @@ def test_create_second_goal(token, cycle_id):
     try:
         headers = {"Authorization": f"Bearer {token}"}
         goal_data = TEST_GOAL_2.copy()
-        goal_data["cycle_id"] = cycle_id
         
         response = requests.post(
             f"{API_BASE_URL}/goals",
             headers=headers,
-            json=goal_data
+            json={**goal_data, "cycle_id": cycle_id}
         )
         
         if response.status_code == 200:
