@@ -150,6 +150,30 @@ backend:
           agent: "testing"
           comment: "✅ Cycle management APIs fully functional. Create/read operations working with proper authentication enforcement."
 
+  - task: "Goal Database Models & API"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Creating Goal models with Law of Attraction integration, milestones, and progress tracking"
+
+  - task: "Weekly Reflection System API"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "API endpoints for weekly check-ins and reflection data with Neville Goddard prompts"
+
 frontend:
   - task: "Authentication Components (Login/Register)"
     implemented: true
