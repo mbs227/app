@@ -195,8 +195,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "User Authentication System (JWT)"
-    - "User Database Models"
     - "Authentication Components (Login/Register)"
     - "Authentication Context & Protected Routes"
   stuck_tasks: []
