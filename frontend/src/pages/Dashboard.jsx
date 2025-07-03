@@ -447,6 +447,23 @@ const Dashboard = () => {
           onGoalCreated={handleGoalCreated}
         />
       )}
+
+      {showWeeklyCheckIn && selectedCycle && (
+        <WeeklyCheckIn
+          cycle={selectedCycle}
+          weekNumber={selectedCycle.current_week}
+          onClose={() => setShowWeeklyCheckIn(false)}
+          onReflectionCreated={handleReflectionCreated}
+        />
+      )}
+
+      {showGoalDetails && selectedGoal && (
+        <GoalDetailsModal
+          goal={selectedGoal}
+          onClose={() => setShowGoalDetails(false)}
+          onGoalUpdated={handleGoalUpdated}
+        />
+      )}
     </div>
   );
 };
