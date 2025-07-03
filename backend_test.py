@@ -283,6 +283,279 @@ def test_get_cycles(token):
         log_test("Get Cycles", False, f"Exception: {str(e)}")
         return None
 
+def test_update_cycle(token, cycle_id):
+    """Test 8: Enhanced Cycle Management - Update Cycle"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        update_data = {
+            "current_week": 2,
+            "status": "active",
+            "law_of_attraction_statement": "I am manifesting my perfect life with ease and joy every day"
+        }
+        
+        response = requests.put(
+            f"{API_BASE_URL}/cycles/{cycle_id}",
+            headers=headers,
+            json=update_data
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if (data["current_week"] == update_data["current_week"] and 
+                data["status"] == update_data["status"] and
+                data["law_of_attraction_statement"] == update_data["law_of_attraction_statement"]):
+                log_test("Update Cycle", True, "Successfully updated cycle with new values")
+                return data
+            else:
+                log_test("Update Cycle", False, "Response data doesn't match expected updated values", response)
+                return None
+        else:
+            log_test("Update Cycle", False, f"Failed to update cycle with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Update Cycle", False, f"Exception: {str(e)}")
+        return None
+
+def test_create_goal(token, cycle_id):
+    """Test 9: Goal Management - Create Goal"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        goal_data = TEST_GOAL.copy()
+        goal_data["cycle_id"] = cycle_id
+        
+        response = requests.post(
+            f"{API_BASE_URL}/goals",
+            headers=headers,
+            json=goal_data
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "id" in data and data["title"] == goal_data["title"]:
+                log_test("Create Goal", True, "Successfully created a goal with Law of Attraction integration")
+                return data
+            else:
+                log_test("Create Goal", False, "Response data doesn't match expected goal data", response)
+                return None
+        else:
+            log_test("Create Goal", False, f"Failed to create goal with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Create Goal", False, f"Exception: {str(e)}")
+        return None
+
+def test_create_second_goal(token, cycle_id):
+    """Test 10: Goal Management - Create Second Goal"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        goal_data = TEST_GOAL_2.copy()
+        goal_data["cycle_id"] = cycle_id
+        
+        response = requests.post(
+            f"{API_BASE_URL}/goals",
+            headers=headers,
+            json=goal_data
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "id" in data and data["title"] == goal_data["title"]:
+                log_test("Create Second Goal", True, "Successfully created a second goal with different category")
+                return data
+            else:
+                log_test("Create Second Goal", False, "Response data doesn't match expected goal data", response)
+                return None
+        else:
+            log_test("Create Second Goal", False, f"Failed to create second goal with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Create Second Goal", False, f"Exception: {str(e)}")
+        return None
+
+def test_get_goals(token, cycle_id):
+    """Test 11: Goal Management - Get Goals"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(
+            f"{API_BASE_URL}/goals?cycle_id={cycle_id}",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                log_test("Get Goals", True, f"Successfully retrieved goals. Count: {len(data)}")
+                return data
+            else:
+                log_test("Get Goals", False, "Response is not a list of goals", response)
+                return None
+        else:
+            log_test("Get Goals", False, f"Failed to get goals with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Get Goals", False, f"Exception: {str(e)}")
+        return None
+
+def test_get_specific_goal(token, goal_id):
+    """Test 12: Goal Management - Get Specific Goal"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(
+            f"{API_BASE_URL}/goals/{goal_id}",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "id" in data and data["id"] == goal_id:
+                log_test("Get Specific Goal", True, f"Successfully retrieved specific goal: {data['title']}")
+                return data
+            else:
+                log_test("Get Specific Goal", False, "Response data doesn't match expected goal", response)
+                return None
+        else:
+            log_test("Get Specific Goal", False, f"Failed to get specific goal with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Get Specific Goal", False, f"Exception: {str(e)}")
+        return None
+
+def test_update_goal(token, goal_id):
+    """Test 13: Goal Management - Update Goal Progress"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        update_data = {
+            "progress": 35,
+            "status": "in_progress",
+            "milestones": [
+                {
+                    "id": "milestone-id-will-be-replaced",  # Will be replaced in the code
+                    "title": "Meditate 10 minutes daily for one week",
+                    "completed": True,
+                    "completed_date": datetime.utcnow().isoformat()
+                },
+                {
+                    "id": "milestone-id-will-be-replaced-2",  # Will be replaced in the code
+                    "title": "Increase to 20 minutes daily",
+                    "completed": False,
+                    "completed_date": None
+                },
+                {
+                    "id": "milestone-id-will-be-replaced-3",  # Will be replaced in the code
+                    "title": "Experience deep state of presence",
+                    "completed": False,
+                    "completed_date": None
+                }
+            ]
+        }
+        
+        # First get the current goal to get the milestone IDs
+        goal_response = requests.get(f"{API_BASE_URL}/goals/{goal_id}", headers=headers)
+        if goal_response.status_code == 200:
+            current_goal = goal_response.json()
+            # Replace the placeholder milestone IDs with the actual ones
+            for i in range(min(len(update_data["milestones"]), len(current_goal["milestones"]))):
+                update_data["milestones"][i]["id"] = current_goal["milestones"][i]["id"]
+        
+        response = requests.put(
+            f"{API_BASE_URL}/goals/{goal_id}",
+            headers=headers,
+            json=update_data
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if (data["progress"] == update_data["progress"] and 
+                data["status"] == update_data["status"] and
+                data["milestones"][0]["completed"] == update_data["milestones"][0]["completed"]):
+                log_test("Update Goal", True, "Successfully updated goal progress and milestone completion")
+                return data
+            else:
+                log_test("Update Goal", False, "Response data doesn't match expected updated values", response)
+                return None
+        else:
+            log_test("Update Goal", False, f"Failed to update goal with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Update Goal", False, f"Exception: {str(e)}")
+        return None
+
+def test_create_reflection(token, cycle_id):
+    """Test 14: Weekly Reflection - Create Reflection"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        reflection_data = TEST_REFLECTION.copy()
+        reflection_data["cycle_id"] = cycle_id
+        
+        response = requests.post(
+            f"{API_BASE_URL}/reflections",
+            headers=headers,
+            json=reflection_data
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "id" in data and data["week_number"] == reflection_data["week_number"]:
+                log_test("Create Reflection", True, "Successfully created a weekly reflection with manifestation data")
+                return data
+            else:
+                log_test("Create Reflection", False, "Response data doesn't match expected reflection data", response)
+                return None
+        else:
+            log_test("Create Reflection", False, f"Failed to create reflection with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Create Reflection", False, f"Exception: {str(e)}")
+        return None
+
+def test_get_reflections(token, cycle_id):
+    """Test 15: Weekly Reflection - Get Reflections"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(
+            f"{API_BASE_URL}/reflections?cycle_id={cycle_id}",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                log_test("Get Reflections", True, f"Successfully retrieved reflections. Count: {len(data)}")
+                return data
+            else:
+                log_test("Get Reflections", False, "Response is not a list of reflections", response)
+                return None
+        else:
+            log_test("Get Reflections", False, f"Failed to get reflections with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Get Reflections", False, f"Exception: {str(e)}")
+        return None
+
+def test_get_specific_reflection(token, reflection_id):
+    """Test 16: Weekly Reflection - Get Specific Reflection"""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(
+            f"{API_BASE_URL}/reflections/{reflection_id}",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "id" in data and data["id"] == reflection_id:
+                log_test("Get Specific Reflection", True, f"Successfully retrieved specific reflection for week {data['week_number']}")
+                return data
+            else:
+                log_test("Get Specific Reflection", False, "Response data doesn't match expected reflection", response)
+                return None
+        else:
+            log_test("Get Specific Reflection", False, f"Failed to get specific reflection with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Get Specific Reflection", False, f"Exception: {str(e)}")
+        return None
+
 def test_error_handling_duplicate_email():
     """Test 8a: Error Handling - Duplicate Email"""
     try:
