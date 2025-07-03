@@ -181,7 +181,31 @@ backend:
           comment: "API endpoints for weekly check-ins and reflection data with Neville Goddard prompts"
         - working: true
           agent: "testing"
-          comment: "✅ Weekly Reflection System APIs working correctly. Successfully tested creating reflections with mood ratings and manifestation tracking, retrieving all reflections (with optional cycle filtering), and retrieving specific reflections by ID."
+          comment: "✅ Weekly reflection APIs fully functional. Create/read operations working with proper mood tracking and manifestation data."
+
+  - task: "Goal Analytics & Progress History API"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "API endpoints for goal progress history, analytics, and milestone tracking over time"
+
+  - task: "Cycle Completion & Analytics API"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "API for cycle completion flow, analytics, and archival system"
 
 frontend:
   - task: "Authentication Components (Login/Register)"
