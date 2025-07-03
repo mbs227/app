@@ -381,9 +381,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Cycle Creation Component"
-    - "Goal Creation & Management Components"
-    - "12-Week Calendar Grid Component"
+    - "Goal Analytics & Progress History API"
+    - "Weekly Check-in Component"
+    - "Goal Details Modal"
+    - "Progress Visualization Components"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
