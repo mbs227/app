@@ -4,6 +4,10 @@ import axios from 'axios';
 import CreateCycle from '../components/cycles/CreateCycle';
 import CreateGoal from '../components/goals/CreateGoal';
 import TwelveWeekCalendar from '../components/calendar/TwelveWeekCalendar';
+import WeeklyCheckIn from '../components/reflections/WeeklyCheckIn';
+import GoalDetailsModal from '../components/goals/GoalDetailsModal';
+import AnalyticsDashboard from '../components/visualization/AnalyticsDashboard';
+import CycleProgressRing from '../components/visualization/CycleProgressRing';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
