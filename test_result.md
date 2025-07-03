@@ -399,9 +399,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Weekly Check-in Component"
-    - "Goal Details Modal"
-    - "Progress Visualization Components"
+    - "Cycle Completion Flow" 
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
