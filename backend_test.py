@@ -656,10 +656,43 @@ def run_all_tests():
     
     # Test 6-7: Cycle Management
     cycle_data = test_create_cycle(token)
-    if cycle_data:
-        test_get_cycles(token)
+    if not cycle_data:
+        print("\n❌ Cycle Creation failed. Stopping tests.")
+        return summarize_results()
     
-    # Test 8: Error Handling
+    cycle_id = cycle_data["id"]
+    cycles = test_get_cycles(token)
+    
+    # Test 8: Enhanced Cycle Management
+    updated_cycle = test_update_cycle(token, cycle_id)
+    
+    # Test 9-13: Goal Management
+    goal_data = test_create_goal(token, cycle_id)
+    if not goal_data:
+        print("\n❌ Goal Creation failed. Stopping tests.")
+        return summarize_results()
+    
+    goal_id = goal_data["id"]
+    
+    goal_data_2 = test_create_second_goal(token, cycle_id)
+    if goal_data_2:
+        goal_id_2 = goal_data_2["id"]
+    
+    goals = test_get_goals(token, cycle_id)
+    specific_goal = test_get_specific_goal(token, goal_id)
+    updated_goal = test_update_goal(token, goal_id)
+    
+    # Test 14-16: Weekly Reflection System
+    reflection_data = test_create_reflection(token, cycle_id)
+    if not reflection_data:
+        print("\n❌ Reflection Creation failed. Stopping tests.")
+        return summarize_results()
+    
+    reflection_id = reflection_data["id"]
+    reflections = test_get_reflections(token, cycle_id)
+    specific_reflection = test_get_specific_reflection(token, reflection_id)
+    
+    # Test Error Handling
     test_error_handling_duplicate_email()
     test_error_handling_invalid_login()
     test_error_handling_missing_fields()
