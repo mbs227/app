@@ -332,6 +332,10 @@ const Dashboard = () => {
           <TwelveWeekCalendar cycle={selectedCycle} goals={cycleGoals} />
         )}
 
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard selectedCycle={selectedCycle} />
+        )}
+
         {activeTab === 'goals' && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <div className="flex justify-between items-center mb-6">
@@ -366,22 +370,30 @@ const Dashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {cycleGoals.map((goal) => (
-                      <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
+                      <div 
+                        key={goal.id} 
+                        onClick={() => handleOpenGoalDetails(goal)}
+                        className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors cursor-pointer"
+                      >
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h4 className="font-medium text-gray-900">{goal.title}</h4>
+                            <h4 className="font-medium text-gray-900 hover:text-purple-700 transition-colors">
+                              {goal.title}
+                            </h4>
                             <p className="text-sm text-gray-600">{goal.category} • Week {goal.start_week}-{goal.target_week}</p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            goal.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            goal.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-600'
-                          }`}>
-                            {goal.progress}%
-                          </span>
+                          <div className="text-right">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              goal.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              goal.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {goal.progress}%
+                            </span>
+                          </div>
                         </div>
 
-                        <p className="text-gray-700 mb-3">{goal.description}</p>
+                        <p className="text-gray-700 mb-3 text-sm">{goal.description}</p>
 
                         <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                           <div
@@ -394,11 +406,6 @@ const Dashboard = () => {
                           <div className="bg-purple-50 p-3 rounded-lg">
                             <p className="text-sm font-medium text-purple-900 mb-1">💫 Law of Attraction "Why":</p>
                             <p className="text-sm text-purple-800 italic">"{goal.why_statement}"</p>
-                          </div>
-                          
-                          <div className="bg-blue-50 p-3 rounded-lg">
-                            <p className="text-sm font-medium text-blue-900 mb-1">🎭 Neville Goddard Visualization:</p>
-                            <p className="text-sm text-blue-800 italic">"{goal.visualization_note}"</p>
                           </div>
                         </div>
                       </div>
