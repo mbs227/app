@@ -387,7 +387,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Goal Analytics & Progress History API"
     - "Weekly Check-in Component"
     - "Goal Details Modal"
     - "Progress Visualization Components"
