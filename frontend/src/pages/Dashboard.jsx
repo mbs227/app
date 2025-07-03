@@ -19,7 +19,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateCycle, setShowCreateCycle] = useState(false);
   const [showCreateGoal, setShowCreateGoal] = useState(false);
+  const [showWeeklyCheckIn, setShowWeeklyCheckIn] = useState(false);
+  const [showGoalDetails, setShowGoalDetails] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState(null);
+  const [selectedGoal, setSelectedGoal] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
