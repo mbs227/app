@@ -27,6 +27,65 @@ TEST_CYCLE = {
     "law_of_attraction_statement": "I am attracting abundance and success in all areas of my life"
 }
 
+TEST_GOAL = {
+    "title": "Master Meditation Practice",
+    "description": "Develop a consistent meditation practice to enhance manifestation abilities",
+    "category": "personal_development",
+    "start_week": 1,
+    "target_week": 6,
+    "why_statement": "I am developing my meditation practice because it aligns me with my highest self and amplifies my manifestation power",
+    "visualization_note": "I see myself sitting peacefully each morning, completely present and connected to source energy",
+    "milestones": [
+        {
+            "title": "Meditate 10 minutes daily for one week"
+        },
+        {
+            "title": "Increase to 20 minutes daily"
+        },
+        {
+            "title": "Experience deep state of presence"
+        }
+    ]
+}
+
+TEST_GOAL_2 = {
+    "title": "Launch Online Business",
+    "description": "Create and launch my online coaching business",
+    "category": "career",
+    "start_week": 2,
+    "target_week": 10,
+    "why_statement": "I am launching this business because I'm meant to share my gifts with the world and create financial abundance",
+    "visualization_note": "I see myself confidently helping clients transform their lives while earning abundant income",
+    "milestones": [
+        {
+            "title": "Create business plan"
+        },
+        {
+            "title": "Build website"
+        },
+        {
+            "title": "Sign first 3 clients"
+        }
+    ]
+}
+
+TEST_REFLECTION = {
+    "week_number": 1,
+    "progress_review": "Made significant progress on my meditation practice this week. Started with 5 minutes and worked up to 10 minutes daily.",
+    "law_of_attraction_manifestations": [
+        "Attracted a new opportunity to speak at a local event",
+        "Found the perfect meditation cushion at a thrift store"
+    ],
+    "neville_goddard_practice": "I've been practicing the 'living in the end' technique by feeling the satisfaction of having a consistent meditation practice",
+    "challenges": "Found it difficult to quiet my mind the first few days",
+    "insights": "I realized that consistency matters more than duration at this stage",
+    "next_week_focus": [
+        "Increase meditation to 15 minutes",
+        "Add evening gratitude practice"
+    ],
+    "mood_rating": 8
+}
+
 # Test results tracking
 test_results = {
     "passed": 0,
