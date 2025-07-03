@@ -451,6 +451,163 @@ async def get_reflection(reflection_id: str, current_user: User = Depends(get_cu
         raise HTTPException(status_code=404, detail="Reflection not found")
     return WeeklyReflection(**reflection)
 
+# Enhanced Goal Analytics Routes
+@api_router.post("/goals/{goal_id}/progress", response_model=Goal)
+async def update_goal_progress(goal_id: str, progress_update: GoalProgressUpdate, current_user: User = Depends(get_current_user)):
+    goal = await db.goals.find_one({"id": goal_id, "user_id": current_user.id})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    # Create progress snapshot
+    snapshot = GoalProgressSnapshot(
+        date=datetime.utcnow(),
+        progress=progress_update.progress,
+        notes=progress_update.notes
+    )
+    
+    # Update goal progress
+    update_data = {
+        "progress": progress_update.progress,
+        "updated_at": datetime.utcnow()
+    }
+    
+    if progress_update.milestone_updates:
+        update_data["milestones"] = [m.dict() for m in progress_update.milestone_updates]
+    
+    if progress_update.progress >= 100:
+        update_data["status"] = "completed"
+    elif progress_update.progress > 0:
+        update_data["status"] = "in_progress"
+    
+    # Store progress history
+    history_doc = await db.goal_progress_history.find_one({"goal_id": goal_id})
+    if history_doc:
+        await db.goal_progress_history.update_one(
+            {"goal_id": goal_id},
+            {"$push": {"snapshots": snapshot.dict()}}
+        )
+    else:
+        history = GoalProgressHistory(goal_id=goal_id, snapshots=[snapshot])
+        await db.goal_progress_history.insert_one(history.dict())
+    
+    await db.goals.update_one(
+        {"id": goal_id, "user_id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    updated_goal = await db.goals.find_one({"id": goal_id, "user_id": current_user.id})
+    return Goal(**updated_goal)
+
+@api_router.get("/goals/{goal_id}/progress-history", response_model=GoalProgressHistory)
+async def get_goal_progress_history(goal_id: str, current_user: User = Depends(get_current_user)):
+    # Verify goal belongs to user
+    goal = await db.goals.find_one({"id": goal_id, "user_id": current_user.id})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    history = await db.goal_progress_history.find_one({"goal_id": goal_id})
+    if not history:
+        # Return empty history if none exists
+        return GoalProgressHistory(goal_id=goal_id, snapshots=[])
+    
+    return GoalProgressHistory(**history)
+
+# Cycle Analytics Routes
+@api_router.get("/cycles/{cycle_id}/analytics", response_model=CycleAnalytics)
+async def get_cycle_analytics(cycle_id: str, current_user: User = Depends(get_current_user)):
+    cycle = await db.cycles.find_one({"id": cycle_id, "user_id": current_user.id})
+    if not cycle:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+    
+    # Get cycle goals
+    goals = await db.goals.find({"cycle_id": cycle_id, "user_id": current_user.id}).to_list(1000)
+    goals_total = len(goals)
+    goals_completed = len([g for g in goals if g.get("status") == "completed"])
+    completion_rate = (goals_completed / goals_total * 100) if goals_total > 0 else 0
+    
+    # Get reflections for average mood
+    reflections = await db.reflections.find({"cycle_id": cycle_id, "user_id": current_user.id}).to_list(1000)
+    average_mood = sum([r.get("mood_rating", 5) for r in reflections]) / len(reflections) if reflections else 5
+    
+    # Count manifestations
+    manifestation_count = sum([len(r.get("law_of_attraction_manifestations", [])) for r in reflections])
+    
+    analytics = CycleAnalytics(
+        cycle_id=cycle_id,
+        completion_rate=completion_rate,
+        goals_completed=goals_completed,
+        goals_total=goals_total,
+        average_mood=average_mood,
+        manifestation_count=manifestation_count,
+        weeks_completed=cycle["current_week"] - 1,
+        start_date=cycle["start_date"],
+        current_week=cycle["current_week"]
+    )
+    
+    return analytics
+
+@api_router.post("/cycles/{cycle_id}/complete", response_model=Cycle)
+async def complete_cycle(cycle_id: str, completion_data: CycleComplete, current_user: User = Depends(get_current_user)):
+    cycle = await db.cycles.find_one({"id": cycle_id, "user_id": current_user.id})
+    if not cycle:
+        raise HTTPException(status_code=404, detail="Cycle not found")
+    
+    update_data = {
+        "status": "completed",
+        "current_week": 12,
+        "completion_notes": completion_data.completion_notes,
+        "success_story": completion_data.success_story,
+        "overall_satisfaction": completion_data.overall_satisfaction,
+        "completed_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    await db.cycles.update_one(
+        {"id": cycle_id, "user_id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    completed_cycle = await db.cycles.find_one({"id": cycle_id, "user_id": current_user.id})
+    return Cycle(**completed_cycle)
+
+# Dashboard Analytics
+@api_router.get("/analytics/dashboard", response_model=DashboardAnalytics)
+async def get_dashboard_analytics(current_user: User = Depends(get_current_user)):
+    # Get user cycles and goals
+    cycles = await db.cycles.find({"user_id": current_user.id}).to_list(1000)
+    goals = await db.goals.find({"user_id": current_user.id}).to_list(1000)
+    reflections = await db.reflections.find({"user_id": current_user.id}).sort("created_at", -1).limit(10).to_list(10)
+    
+    total_cycles = len(cycles)
+    active_cycles = len([c for c in cycles if c.get("status") == "active"])
+    completed_cycles = len([c for c in cycles if c.get("status") == "completed"])
+    
+    total_goals = len(goals)
+    completed_goals = len([g for g in goals if g.get("status") == "completed"])
+    average_completion_rate = (completed_goals / total_goals * 100) if total_goals > 0 else 0
+    
+    # Recent manifestations from last 5 reflections
+    recent_manifestations = []
+    for reflection in reflections[:5]:
+        manifestations = reflection.get("law_of_attraction_manifestations", [])
+        recent_manifestations.extend(manifestations[:2])  # Take up to 2 per reflection
+    
+    # Mood trend from recent reflections
+    mood_trend = [r.get("mood_rating", 5) for r in reflections]
+    
+    analytics = DashboardAnalytics(
+        total_cycles=total_cycles,
+        active_cycles=active_cycles,
+        completed_cycles=completed_cycles,
+        total_goals=total_goals,
+        completed_goals=completed_goals,
+        average_completion_rate=average_completion_rate,
+        recent_manifestations=recent_manifestations[:10],
+        mood_trend=mood_trend[:10]
+    )
+    
+    return analytics
+
 # Legacy Models
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
