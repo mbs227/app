@@ -410,6 +410,15 @@ async def get_reflection(reflection_id: str, current_user: User = Depends(get_cu
         raise HTTPException(status_code=404, detail="Reflection not found")
     return WeeklyReflection(**reflection)
 
+# Legacy Models
+class StatusCheck(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    client_name: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class StatusCheckCreate(BaseModel):
+    client_name: str
+
 # Legacy Routes (keeping for backward compatibility)
 @api_router.get("/")
 async def root():
