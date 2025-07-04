@@ -363,13 +363,11 @@ def test_multiple_reset_requests(email):
         if token1 != token2:
             # Verify both tokens are valid
             valid1 = requests.post(
-                f"{API_BASE_URL}/auth/validate-reset-token",
-                json={"token": token1}
+                f"{API_BASE_URL}/auth/validate-reset-token?token={token1}"
             ).status_code == 200
             
             valid2 = requests.post(
-                f"{API_BASE_URL}/auth/validate-reset-token",
-                json={"token": token2}
+                f"{API_BASE_URL}/auth/validate-reset-token?token={token2}"
             ).status_code == 200
             
             if valid1 and valid2:
