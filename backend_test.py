@@ -1212,6 +1212,69 @@ def run_all_tests():
     test_error_handling_invalid_login()
     test_error_handling_missing_fields()
     
+    # Password Reset Tests
+    print("\n🔍 Starting Password Reset Tests...\n")
+    
+    # Create a new test user for password reset
+    password_reset_user = {
+        "email": generate_random_email(),
+        "password": "OriginalPassword123!",
+        "full_name": "Password Reset Test User"
+    }
+    
+    # Register the user
+    password_reset_registration = requests.post(
+        f"{API_BASE_URL}/auth/register",
+        json=password_reset_user
+    ).json()
+    
+    if "access_token" not in password_reset_registration:
+        print("\n❌ Failed to create test user for password reset. Stopping tests.")
+        return summarize_results()
+    
+    # Store the original password for later testing
+    original_password = password_reset_user["password"]
+    email = password_reset_user["email"]
+    
+    # Test 23-24: Forgot Password
+    reset_token = test_forgot_password_valid_email(email)
+    if not reset_token:
+        print("\n❌ Failed to get reset token. Stopping tests.")
+        return summarize_results()
+    
+    test_forgot_password_invalid_email()
+    
+    # Test 25-26: Validate Reset Token
+    test_validate_reset_token(reset_token)
+    test_validate_invalid_token()
+    
+    # Test 29: Test password validation (too short)
+    test_reset_password_short_password(reset_token)
+    
+    # Test 27: Reset Password with Valid Token
+    new_password = "NewTestPassword456!"
+    reset_success = test_reset_password_valid_token(reset_token, new_password)
+    if not reset_success:
+        print("\n❌ Failed to reset password. Stopping tests.")
+        return summarize_results()
+    
+    # Test 30: Verify token is marked as used
+    test_token_used_after_reset(reset_token)
+    
+    # Test 28: Reset Password with Invalid Token
+    test_reset_password_invalid_token("AnotherPassword789!")
+    
+    # Test 31-32: Login with new/old password
+    login_data = test_login_with_new_password(email, new_password)
+    if not login_data:
+        print("\n❌ Failed to login with new password. Stopping tests.")
+        return summarize_results()
+    
+    test_login_with_old_password(email, original_password)
+    
+    # Test 33: Multiple reset requests
+    test_multiple_reset_requests(email)
+    
     return summarize_results()
 
 def summarize_results():
