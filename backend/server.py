@@ -740,7 +740,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["https://www.manifest12.com", "https://app-seven-mu-88.vercel.app", ],
+    allow_origins=["https://www.manifest12.com", "https://app-seven-mu-88.vercel.app"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
