@@ -807,6 +807,316 @@ def test_error_handling_missing_fields():
         log_test("Error Handling - Missing Fields", False, f"Exception: {str(e)}")
         return False
 
+# Password Reset Tests
+def test_forgot_password_valid_email(email):
+    """Test 23: Forgot Password - Valid Email"""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/forgot-password",
+            json={"email": email}
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "reset_token" in data and "message" in data:
+                log_test("Forgot Password - Valid Email", True, 
+                         f"Successfully requested password reset token for {email}")
+                return data["reset_token"]
+            else:
+                log_test("Forgot Password - Valid Email", False, 
+                         "Response missing reset token or message", response)
+                return None
+        else:
+            log_test("Forgot Password - Valid Email", False, 
+                     f"Failed with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Forgot Password - Valid Email", False, f"Exception: {str(e)}")
+        return None
+
+def test_forgot_password_invalid_email():
+    """Test 24: Forgot Password - Invalid Email"""
+    invalid_email = f"nonexistent_{random.randint(1000, 9999)}@example.com"
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/forgot-password",
+            json={"email": invalid_email}
+        )
+        
+        if response.status_code == 200:
+            # For security, the API should not reveal if an email exists or not
+            # So a 200 status is expected even for non-existent emails
+            data = response.json()
+            if "message" in data:
+                log_test("Forgot Password - Invalid Email", True, 
+                         "Correctly handled non-existent email without revealing its status")
+                return True
+            else:
+                log_test("Forgot Password - Invalid Email", False, 
+                         "Response missing expected message", response)
+                return False
+        else:
+            log_test("Forgot Password - Invalid Email", False, 
+                     f"Expected 200 status code for security, got {response.status_code}", response)
+            return False
+    except Exception as e:
+        log_test("Forgot Password - Invalid Email", False, f"Exception: {str(e)}")
+        return False
+
+def test_validate_reset_token(token):
+    """Test 25: Validate Reset Token - Valid Token"""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/validate-reset-token?token={token}"
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "valid" in data and data["valid"] == True:
+                log_test("Validate Reset Token - Valid Token", True, 
+                         "Successfully validated reset token")
+                return True
+            else:
+                log_test("Validate Reset Token - Valid Token", False, 
+                         "Response indicates token is not valid", response)
+                return False
+        else:
+            log_test("Validate Reset Token - Valid Token", False, 
+                     f"Failed with status code {response.status_code}", response)
+            return False
+    except Exception as e:
+        log_test("Validate Reset Token - Valid Token", False, f"Exception: {str(e)}")
+        return False
+
+def test_validate_invalid_token():
+    """Test 26: Validate Reset Token - Invalid Token"""
+    invalid_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/validate-reset-token?token={invalid_token}"
+        )
+        
+        if response.status_code == 400:
+            log_test("Validate Reset Token - Invalid Token", True, 
+                     "Correctly rejected invalid reset token")
+            return True
+        else:
+            log_test("Validate Reset Token - Invalid Token", False, 
+                     f"Expected 400 status code, got {response.status_code}", response)
+            return False
+    except Exception as e:
+        log_test("Validate Reset Token - Invalid Token", False, f"Exception: {str(e)}")
+        return False
+
+def test_reset_password_valid_token(token, new_password):
+    """Test 27: Reset Password - Valid Token"""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/reset-password",
+            json={
+                "token": token,
+                "new_password": new_password
+            }
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "message" in data and "successful" in data["message"].lower():
+                log_test("Reset Password - Valid Token", True, 
+                         "Successfully reset password with valid token")
+                return True
+            else:
+                log_test("Reset Password - Valid Token", False, 
+                         "Response missing success message", response)
+                return False
+        else:
+            log_test("Reset Password - Valid Token", False, 
+                     f"Failed with status code {response.status_code}", response)
+            return False
+    except Exception as e:
+        log_test("Reset Password - Valid Token", False, f"Exception: {str(e)}")
+        return False
+
+def test_reset_password_invalid_token(new_password):
+    """Test 28: Reset Password - Invalid Token"""
+    invalid_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/reset-password",
+            json={
+                "token": invalid_token,
+                "new_password": new_password
+            }
+        )
+        
+        if response.status_code == 400:
+            log_test("Reset Password - Invalid Token", True, 
+                     "Correctly rejected password reset with invalid token")
+            return True
+        else:
+            log_test("Reset Password - Invalid Token", False, 
+                     f"Expected 400 status code, got {response.status_code}", response)
+            return False
+    except Exception as e:
+        log_test("Reset Password - Invalid Token", False, f"Exception: {str(e)}")
+        return False
+
+def test_reset_password_short_password(token):
+    """Test 29: Reset Password - Short Password"""
+    short_password = "short"  # Less than 6 characters
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/reset-password",
+            json={
+                "token": token,
+                "new_password": short_password
+            }
+        )
+        
+        if response.status_code == 400:
+            log_test("Reset Password - Short Password", True, 
+                     "Correctly rejected password reset with too short password")
+            return True
+        else:
+            log_test("Reset Password - Short Password", False, 
+                     f"Expected 400 status code, got {response.status_code}", response)
+            return False
+    except Exception as e:
+        log_test("Reset Password - Short Password", False, f"Exception: {str(e)}")
+        return False
+
+def test_token_used_after_reset(token):
+    """Test 30: Token Used After Reset"""
+    try:
+        # Try to use the token again after a successful reset
+        response = requests.post(
+            f"{API_BASE_URL}/auth/reset-password",
+            json={
+                "token": token,
+                "new_password": "AnotherNewPassword123!"
+            }
+        )
+        
+        if response.status_code == 400:
+            log_test("Token Used After Reset", True, 
+                     "Correctly rejected reuse of already used token")
+            return True
+        else:
+            log_test("Token Used After Reset", False, 
+                     f"Expected 400 status code, got {response.status_code}. Tokens should be one-time use only.", response)
+            return False
+    except Exception as e:
+        log_test("Token Used After Reset", False, f"Exception: {str(e)}")
+        return False
+
+def test_login_with_new_password(email, new_password):
+    """Test 31: Login With New Password"""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/login",
+            json={
+                "email": email,
+                "password": new_password
+            }
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "access_token" in data and "user" in data:
+                log_test("Login With New Password", True, 
+                         f"Successfully logged in with new password")
+                return data
+            else:
+                log_test("Login With New Password", False, 
+                         "Response missing token or user data", response)
+                return None
+        else:
+            log_test("Login With New Password", False, 
+                     f"Failed with status code {response.status_code}", response)
+            return None
+    except Exception as e:
+        log_test("Login With New Password", False, f"Exception: {str(e)}")
+        return None
+
+def test_login_with_old_password(email, old_password):
+    """Test 32: Login With Old Password"""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/auth/login",
+            json={
+                "email": email,
+                "password": old_password
+            }
+        )
+        
+        if response.status_code == 401:
+            log_test("Login With Old Password", True, 
+                     "Correctly rejected login with old password")
+            return True
+        else:
+            log_test("Login With Old Password", False, 
+                     f"Expected 401 status code, got {response.status_code}. Old password should no longer work.", response)
+            return False
+    except Exception as e:
+        log_test("Login With Old Password", False, f"Exception: {str(e)}")
+        return False
+
+def test_multiple_reset_requests(email):
+    """Test 33: Multiple Reset Requests"""
+    try:
+        # Request first token
+        response1 = requests.post(
+            f"{API_BASE_URL}/auth/forgot-password",
+            json={"email": email}
+        )
+        
+        if response1.status_code != 200 or "reset_token" not in response1.json():
+            log_test("Multiple Reset Requests", False, 
+                     "Failed to get first reset token", response1)
+            return False
+        
+        token1 = response1.json()["reset_token"]
+        
+        # Request second token
+        response2 = requests.post(
+            f"{API_BASE_URL}/auth/forgot-password",
+            json={"email": email}
+        )
+        
+        if response2.status_code != 200 or "reset_token" not in response2.json():
+            log_test("Multiple Reset Requests", False, 
+                     "Failed to get second reset token", response2)
+            return False
+        
+        token2 = response2.json()["reset_token"]
+        
+        # Verify both tokens are different
+        if token1 != token2:
+            # Verify both tokens are valid
+            valid1 = requests.post(
+                f"{API_BASE_URL}/auth/validate-reset-token?token={token1}"
+            ).status_code == 200
+            
+            valid2 = requests.post(
+                f"{API_BASE_URL}/auth/validate-reset-token?token={token2}"
+            ).status_code == 200
+            
+            if valid1 and valid2:
+                log_test("Multiple Reset Requests", True, 
+                         "Successfully generated multiple valid reset tokens")
+                return True
+            else:
+                log_test("Multiple Reset Requests", False, 
+                         f"Not all tokens are valid. Token1 valid: {valid1}, Token2 valid: {valid2}")
+                return False
+        else:
+            log_test("Multiple Reset Requests", False, 
+                     "Generated identical tokens for multiple requests")
+            return False
+    except Exception as e:
+        log_test("Multiple Reset Requests", False, f"Exception: {str(e)}")
+        return False
+
 def run_all_tests():
     """Run all tests in sequence"""
     print("\n🔍 Starting Manifest 12 Backend API Tests...\n")
