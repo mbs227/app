@@ -133,9 +133,9 @@ def test_forgot_password_invalid_email():
 def test_validate_valid_token(token):
     """Test 3: Validate a valid reset token"""
     try:
+        # Send token as a query parameter instead of JSON body
         response = requests.post(
-            f"{API_BASE_URL}/auth/validate-reset-token",
-            json={"token": token}
+            f"{API_BASE_URL}/auth/validate-reset-token?token={token}"
         )
         
         if response.status_code == 200:
