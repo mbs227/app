@@ -211,7 +211,17 @@ backend:
           comment: "API for cycle completion flow, analytics, and archival system"
         - working: true
           agent: "testing"
-          comment: "✅ Cycle analytics and completion APIs working correctly. Dashboard analytics, cycle completion with success stories, and comprehensive analytics calculations all functional."
+  - task: "Password Reset System"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implement password reset request and confirmation endpoints with secure token generation"
 
 frontend:
   - task: "Authentication Components (Login/Register)"
