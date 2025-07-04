@@ -322,6 +322,89 @@ async def login(user_data: UserLogin):
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return UserResponse(**current_user.dict())
 
+# Password Reset Routes
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: PasswordResetRequest):
+    user = await db.users.find_one({"email": request.email})
+    if not user:
+        # For security, don't reveal if email exists or not
+        return {"message": "If the email exists, a password reset token will be provided"}
+    
+    # Generate secure reset token
+    reset_token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
+    
+    # Store reset token
+    password_reset = PasswordResetToken(
+        user_id=user["id"],
+        token=reset_token,
+        expires_at=expires_at
+    )
+    
+    await db.password_reset_tokens.insert_one(password_reset.dict())
+    
+    # In a real application, you would send this token via email
+    # For development, we'll return it in the response
+    return {
+        "message": "Password reset token generated",
+        "reset_token": reset_token,  # Remove this in production
+        "expires_in_minutes": 60
+    }
+
+@api_router.post("/auth/reset-password")
+async def reset_password(request: PasswordResetConfirm):
+    # Find valid reset token
+    reset_token_doc = await db.password_reset_tokens.find_one({
+        "token": request.token,
+        "used": False,
+        "expires_at": {"$gt": datetime.utcnow()}
+    })
+    
+    if not reset_token_doc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+    
+    # Validate new password
+    if len(request.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long"
+        )
+    
+    # Update user password
+    new_password_hash = get_password_hash(request.new_password)
+    await db.users.update_one(
+        {"id": reset_token_doc["user_id"]},
+        {"$set": {"password_hash": new_password_hash, "updated_at": datetime.utcnow()}}
+    )
+    
+    # Mark token as used
+    await db.password_reset_tokens.update_one(
+        {"id": reset_token_doc["id"]},
+        {"$set": {"used": True, "updated_at": datetime.utcnow()}}
+    )
+    
+    return {"message": "Password reset successful"}
+
+@api_router.post("/auth/validate-reset-token")
+async def validate_reset_token(token: str):
+    """Validate if a reset token is still valid"""
+    reset_token_doc = await db.password_reset_tokens.find_one({
+        "token": token,
+        "used": False,
+        "expires_at": {"$gt": datetime.utcnow()}
+    })
+    
+    if not reset_token_doc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+    
+    return {"valid": True, "expires_at": reset_token_doc["expires_at"]}
+
 # Cycle Management Routes
 @api_router.post("/cycles", response_model=Cycle)
 async def create_cycle(cycle_data: CycleCreate, current_user: User = Depends(get_current_user)):
