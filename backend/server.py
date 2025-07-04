@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 import jwt
 from email_validator import validate_email, EmailNotValidError
+import secrets
 
 
 ROOT_DIR = Path(__file__).parent
