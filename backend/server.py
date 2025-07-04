@@ -739,11 +739,16 @@ app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=[
+        "https://app-jdgb0wad7-mbs227s-projects.vercel.app",  # Your Vercel front-end
+        "https://www.manifest12.com",  # Also safe to echo if needed
+    ],
     allow_credentials=True,
-    allow_origins=["https://www.manifest12.com", "https://app-seven-mu-88.vercel.app"],
-    allow_methods=["GET", "POST","OPTIONS"],
+    allow_methods=["POST", "OPTIONS"],  # Include OPTIONS for preflight
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
+
+
 
 # Configure logging
 logging.basicConfig(
