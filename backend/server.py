@@ -741,8 +741,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=["https://www.manifest12.com", "https://app-seven-mu-88.vercel.app"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST","OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
 # Configure logging
