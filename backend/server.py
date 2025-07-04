@@ -154,6 +154,22 @@ class WeeklyReflection(BaseModel):
     mood_rating: int = 5
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+# Password Reset Models
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+class PasswordResetToken(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    token: str
+    expires_at: datetime
+    used: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 # Enhanced Analytics Models
 class GoalProgressSnapshot(BaseModel):
     date: datetime
