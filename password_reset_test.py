@@ -160,9 +160,9 @@ def test_validate_invalid_token():
     """Test 4: Validate an invalid reset token"""
     invalid_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
     try:
+        # Send token as a query parameter instead of JSON body
         response = requests.post(
-            f"{API_BASE_URL}/auth/validate-reset-token",
-            json={"token": invalid_token}
+            f"{API_BASE_URL}/auth/validate-reset-token?token={invalid_token}"
         )
         
         if response.status_code == 400:
