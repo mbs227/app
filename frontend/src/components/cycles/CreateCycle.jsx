@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import axios from 'axios';
-
-const API = '/api';
+import { useCreateCycle } from '../../hooks/useCycles';
 
 const CreateCycle = ({ onClose, onCycleCreated }) => {
   const [formData, setFormData] = useState({
@@ -11,8 +8,9 @@ const CreateCycle = ({ onClose, onCycleCreated }) => {
     law_of_attraction_statement: '',
     start_date: new Date().toISOString().split('T')[0]
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const createCycleMutation = useCreateCycle();
 
   const handleChange = (e) => {
     setFormData({
@@ -24,7 +22,6 @@ const CreateCycle = ({ onClose, onCycleCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
       const cycleData = {
@@ -32,10 +29,10 @@ const CreateCycle = ({ onClose, onCycleCreated }) => {
         start_date: new Date(formData.start_date).toISOString()
       };
 
-      const response = await axios.post(`${API}/cycles`, cycleData);
+      const data = await createCycleMutation.mutateAsync(cycleData);
       
       if (onCycleCreated) {
-        onCycleCreated(response.data);
+        onCycleCreated(data);
       }
       
       if (onClose) {
@@ -44,8 +41,6 @@ const CreateCycle = ({ onClose, onCycleCreated }) => {
     } catch (error) {
       console.error('Error creating cycle:', error);
       setError(error.response?.data?.detail || 'Failed to create cycle');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -166,10 +161,10 @@ const CreateCycle = ({ onClose, onCycleCreated }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={createCycleMutation.isPending}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating...' : 'Create 12-Week Cycle'}
+                {createCycleMutation.isPending ? 'Creating...' : 'Create 12-Week Cycle'}
               </button>
             </div>
           </form>

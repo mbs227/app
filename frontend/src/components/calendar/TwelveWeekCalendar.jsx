@@ -1,26 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API = '/api';
+import React, { useState } from 'react';
+import { useReflections } from '../../hooks/useReflections';
 
 const TwelveWeekCalendar = ({ cycle, goals = [] }) => {
   const [selectedWeek, setSelectedWeek] = useState(cycle?.current_week || 1);
-  const [reflections, setReflections] = useState([]);
 
-  useEffect(() => {
-    if (cycle) {
-      fetchReflections();
-    }
-  }, [cycle]);
-
-  const fetchReflections = async () => {
-    try {
-      const response = await axios.get(`${API}/reflections?cycle_id=${cycle.id}`);
-      setReflections(response.data);
-    } catch (error) {
-      console.error('Error fetching reflections:', error);
-    }
-  };
+  // Fetch reflections using React Query
+  const { data: reflections = [] } = useReflections(cycle?.id);
 
   const getWeekStatus = (weekNumber) => {
     if (weekNumber < cycle.current_week) return 'completed';

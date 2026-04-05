@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { useCycles, useCycle } from '../hooks/useCycles';
+import { useGoals } from '../hooks/useGoals';
+import { useQueryClient } from '@tanstack/react-query';
 import CreateCycle from '../components/cycles/CreateCycle';
 import CreateGoal from '../components/goals/CreateGoal';
 import TwelveWeekCalendar from '../components/calendar/TwelveWeekCalendar';
@@ -9,63 +11,54 @@ import GoalDetailsModal from '../components/goals/GoalDetailsModal';
 import AnalyticsDashboard from '../components/visualization/AnalyticsDashboard';
 import CycleProgressRing from '../components/visualization/CycleProgressRing';
 
-const API = '/api';
-
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const [cycles, setCycles] = useState([]);
-  const [goals, setGoals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
+  // State for modals and selection
   const [showCreateCycle, setShowCreateCycle] = useState(false);
   const [showCreateGoal, setShowCreateGoal] = useState(false);
   const [showWeeklyCheckIn, setShowWeeklyCheckIn] = useState(false);
   const [showGoalDetails, setShowGoalDetails] = useState(false);
-  const [selectedCycle, setSelectedCycle] = useState(null);
+  const [selectedCycleId, setSelectedCycleId] = useState(null);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Fetch cycles and goals using React Query
+  const { data: cycles = [], isLoading: cyclesLoading } = useCycles();
+  const { data: goals = [], isLoading: goalsLoading } = useGoals();
 
-  const fetchData = async () => {
-    try {
-      const [cyclesResponse, goalsResponse] = await Promise.all([
-        axios.get(`${API}/cycles`),
-        axios.get(`${API}/goals`)
-      ]);
-      
-      setCycles(cyclesResponse.data);
-      setGoals(goalsResponse.data);
-      
-      if (cyclesResponse.data.length > 0 && !selectedCycle) {
-        setSelectedCycle(cyclesResponse.data.find(c => c.status === 'active') || cyclesResponse.data[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
+  // Auto-select first active cycle when cycles load
+  useEffect(() => {
+    if (cycles.length > 0 && !selectedCycleId) {
+      const activeCycle = cycles.find(c => c.status === 'active');
+      setSelectedCycleId(activeCycle?.id || cycles[0].id);
     }
-  };
+  }, [cycles, selectedCycleId]);
+
+  const selectedCycle = cycles.find(c => c.id === selectedCycleId);
+  const cycleGoals = selectedCycle ? goals.filter(g => g.cycle_id === selectedCycle.id) : [];
 
   const handleCycleCreated = (newCycle) => {
-    setCycles([...cycles, newCycle]);
-    setSelectedCycle(newCycle);
-    fetchData(); // Refresh data
+    setSelectedCycleId(newCycle.id);
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['cycles'] });
   };
 
-  const handleGoalCreated = (newGoal) => {
-    setGoals([...goals, newGoal]);
-    fetchData(); // Refresh data
+  const handleGoalCreated = () => {
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['goals'] });
   };
 
-  const handleGoalUpdated = (updatedGoal) => {
-    setGoals(goals.map(g => g.id === updatedGoal.id ? updatedGoal : g));
-    fetchData(); // Refresh data
+  const handleGoalUpdated = () => {
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['goals'] });
   };
 
-  const handleReflectionCreated = (newReflection) => {
-    fetchData(); // Refresh data
+  const handleReflectionCreated = () => {
+    // Invalidate relevant queries
+    queryClient.invalidateQueries({ queryKey: ['reflections'] });
+    queryClient.invalidateQueries({ queryKey: ['analytics'] });
   };
 
   const handleOpenGoalDetails = (goal) => {
@@ -79,7 +72,8 @@ const Dashboard = () => {
 
   const activeCycles = cycles.filter(c => c.status === 'active');
   const completedCycles = cycles.filter(c => c.status === 'completed');
-  const cycleGoals = selectedCycle ? goals.filter(g => g.cycle_id === selectedCycle.id) : [];
+
+  const loading = cyclesLoading || goalsLoading;
 
   if (loading) {
     return (
@@ -230,7 +224,7 @@ const Dashboard = () => {
                     <h4 className="font-medium text-gray-700">Progress Overview</h4>
                     <div className="flex flex-wrap gap-4">
                       {activeCycles.map((cycle) => (
-                        <div key={cycle.id} onClick={() => setSelectedCycle(cycle)} className="cursor-pointer">
+                        <div key={cycle.id} onClick={() => setSelectedCycleId(cycle.id)} className="cursor-pointer">
                           <CycleProgressRing
                             progress={(cycle.current_week / 12) * 100}
                             currentWeek={cycle.current_week}
@@ -248,9 +242,9 @@ const Dashboard = () => {
                     {cycles.map((cycle) => (
                       <div 
                         key={cycle.id} 
-                        onClick={() => setSelectedCycle(cycle)}
+                        onClick={() => setSelectedCycleId(cycle.id)}
                         className={`border-2 rounded-lg p-4 hover:border-purple-300 transition-colors cursor-pointer ${
-                          selectedCycle?.id === cycle.id ? 'border-purple-400 bg-purple-50' : 'border-gray-200'
+                          selectedCycleId === cycle.id ? 'border-purple-400 bg-purple-50' : 'border-gray-200'
                         }`}
                       >
                         <div className="flex justify-between items-start mb-2">

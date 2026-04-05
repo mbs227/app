@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API = '/api';
+import React, { useState } from 'react';
+import { useGoals } from '../../hooks/useGoals';
+import { useCreateReflection } from '../../hooks/useReflections';
 
 const WeeklyCheckIn = ({ cycle, weekNumber, onClose, onReflectionCreated }) => {
   const [formData, setFormData] = useState({
@@ -13,22 +12,13 @@ const WeeklyCheckIn = ({ cycle, weekNumber, onClose, onReflectionCreated }) => {
     next_week_focus: [''],
     mood_rating: 7
   });
-  const [goals, setGoals] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchCycleGoals();
-  }, [cycle]);
-
-  const fetchCycleGoals = async () => {
-    try {
-      const response = await axios.get(`${API}/goals?cycle_id=${cycle.id}`);
-      setGoals(response.data);
-    } catch (error) {
-      console.error('Error fetching goals:', error);
-    }
-  };
+  // Fetch goals for this cycle using React Query
+  const { data: goals = [] } = useGoals(cycle.id);
+  
+  // Mutation for creating reflection
+  const createReflectionMutation = useCreateReflection();
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
@@ -60,7 +50,6 @@ const WeeklyCheckIn = ({ cycle, weekNumber, onClose, onReflectionCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
       const reflectionData = {
@@ -71,10 +60,10 @@ const WeeklyCheckIn = ({ cycle, weekNumber, onClose, onReflectionCreated }) => {
         next_week_focus: formData.next_week_focus.filter(f => f.trim())
       };
 
-      const response = await axios.post(`${API}/reflections`, reflectionData);
+      const data = await createReflectionMutation.mutateAsync(reflectionData);
       
       if (onReflectionCreated) {
-        onReflectionCreated(response.data);
+        onReflectionCreated(data);
       }
       
       if (onClose) {
@@ -83,8 +72,6 @@ const WeeklyCheckIn = ({ cycle, weekNumber, onClose, onReflectionCreated }) => {
     } catch (error) {
       console.error('Error creating reflection:', error);
       setError(error.response?.data?.detail || 'Failed to save reflection');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -334,10 +321,10 @@ const WeeklyCheckIn = ({ cycle, weekNumber, onClose, onReflectionCreated }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={createReflectionMutation.isPending}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Saving...' : 'Complete Check-in'}
+                {createReflectionMutation.isPending ? 'Saving...' : 'Complete Check-in'}
               </button>
             </div>
           </form>

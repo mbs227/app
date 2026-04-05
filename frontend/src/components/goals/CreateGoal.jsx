@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-
-const API = '/api';
+import { useCreateGoal } from '../../hooks/useGoals';
 
 const CreateGoal = ({ cycle, onClose, onGoalCreated }) => {
   const [formData, setFormData] = useState({
@@ -15,8 +13,9 @@ const CreateGoal = ({ cycle, onClose, onGoalCreated }) => {
     milestones: []
   });
   const [newMilestone, setNewMilestone] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const createGoalMutation = useCreateGoal();
 
   const categories = [
     'Career', 'Health & Fitness', 'Relationships', 'Finance', 
@@ -58,7 +57,6 @@ const CreateGoal = ({ cycle, onClose, onGoalCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
       const goalData = {
@@ -68,10 +66,10 @@ const CreateGoal = ({ cycle, onClose, onGoalCreated }) => {
         target_week: parseInt(formData.target_week)
       };
 
-      const response = await axios.post(`${API}/goals`, goalData);
+      const data = await createGoalMutation.mutateAsync(goalData);
       
       if (onGoalCreated) {
-        onGoalCreated(response.data);
+        onGoalCreated(data);
       }
       
       if (onClose) {
@@ -80,8 +78,6 @@ const CreateGoal = ({ cycle, onClose, onGoalCreated }) => {
     } catch (error) {
       console.error('Error creating goal:', error);
       setError(error.response?.data?.detail || 'Failed to create goal');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -298,10 +294,10 @@ const CreateGoal = ({ cycle, onClose, onGoalCreated }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={createGoalMutation.isPending}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating...' : 'Create Goal'}
+                {createGoalMutation.isPending ? 'Creating...' : 'Create Goal'}
               </button>
             </div>
           </form>

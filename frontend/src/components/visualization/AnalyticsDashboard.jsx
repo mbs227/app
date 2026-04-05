@@ -1,41 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
+import { useDashboardAnalytics } from '../../hooks/useAnalytics';
+import { useCycleAnalytics } from '../../hooks/useCycles';
 import CycleProgressRing from './CycleProgressRing';
 import ProgressCharts from './ProgressCharts';
 
-const API = '/api';
-
 const AnalyticsDashboard = ({ selectedCycle }) => {
-  const [dashboardAnalytics, setDashboardAnalytics] = useState(null);
-  const [cycleAnalytics, setCycleAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Fetch dashboard analytics using React Query
+  const { data: dashboardAnalytics, isLoading: dashboardLoading } = useDashboardAnalytics();
+  
+  // Fetch cycle analytics using React Query
+  const { data: cycleAnalytics, isLoading: cycleLoading } = useCycleAnalytics(selectedCycle?.id);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [selectedCycle]);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      
-      const dashboardPromise = axios.get(`${API}/analytics/dashboard`);
-      const cyclePromise = selectedCycle ? 
-        axios.get(`${API}/cycles/${selectedCycle.id}/analytics`) : 
-        Promise.resolve(null);
-
-      const [dashboardResponse, cycleResponse] = await Promise.all([
-        dashboardPromise,
-        cyclePromise
-      ]);
-
-      setDashboardAnalytics(dashboardResponse.data);
-      setCycleAnalytics(cycleResponse?.data || null);
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = dashboardLoading || (selectedCycle && cycleLoading);
 
   if (loading) {
     return (

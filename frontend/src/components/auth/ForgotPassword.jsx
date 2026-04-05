@@ -1,36 +1,32 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
-
-const API = '/api';
+import { useForgotPassword } from '../../hooks/useAuth';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [error, setError] = useState('');
+
+  const forgotPasswordMutation = useForgotPassword();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
-    setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/auth/forgot-password`, { email });
+      const data = await forgotPasswordMutation.mutateAsync(email);
       
-      setMessage(response.data.message);
+      setMessage(data.message);
       
       // In development, we show the token. In production, this would be sent via email
-      if (response.data.reset_token) {
-        setResetToken(response.data.reset_token);
+      if (data.reset_token) {
+        setResetToken(data.reset_token);
       }
     } catch (error) {
       console.error('Forgot password error:', error);
       setError(error.response?.data?.detail || 'An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -87,10 +83,10 @@ const ForgotPassword = () => {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={forgotPasswordMutation.isPending}
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Sending...' : 'Send Reset Instructions'}
+                {forgotPasswordMutation.isPending ? 'Sending...' : 'Send Reset Instructions'}
               </button>
             </form>
           ) : (

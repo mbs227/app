@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API = '/api';
+import React, { useState } from 'react';
+import { useGoalProgressHistory, useUpdateGoalProgress } from '../../hooks/useGoals';
 
 const GoalDetailsModal = ({ goal, onClose, onGoalUpdated }) => {
   const [progressData, setProgressData] = useState({
@@ -9,26 +7,14 @@ const GoalDetailsModal = ({ goal, onClose, onGoalUpdated }) => {
     notes: '',
     milestone_updates: goal.milestones || []
   });
-  const [progressHistory, setProgressHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchProgressHistory();
-  }, [goal.id]);
-
-  const fetchProgressHistory = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API}/goals/${goal.id}/progress-history`);
-      setProgressHistory(response.data.snapshots || []);
-    } catch (error) {
-      console.error('Error fetching progress history:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch progress history using React Query
+  const { data: progressHistoryData, isLoading: loading } = useGoalProgressHistory(goal.id);
+  const progressHistory = progressHistoryData?.snapshots || [];
+  
+  // Mutation for updating progress
+  const updateProgressMutation = useUpdateGoalProgress();
 
   const handleProgressChange = (e) => {
     const newProgress = parseInt(e.target.value);
@@ -62,17 +48,16 @@ const GoalDetailsModal = ({ goal, onClose, onGoalUpdated }) => {
 
   const handleUpdateProgress = async () => {
     setError('');
-    setUpdating(true);
 
     try {
-      const response = await axios.post(`${API}/goals/${goal.id}/progress`, progressData);
+      const data = await updateProgressMutation.mutateAsync({
+        goalId: goal.id,
+        progressData
+      });
       
       if (onGoalUpdated) {
-        onGoalUpdated(response.data);
+        onGoalUpdated(data);
       }
-      
-      // Refresh progress history
-      await fetchProgressHistory();
       
       // Reset notes after successful update
       setProgressData({
@@ -82,8 +67,6 @@ const GoalDetailsModal = ({ goal, onClose, onGoalUpdated }) => {
     } catch (error) {
       console.error('Error updating progress:', error);
       setError(error.response?.data?.detail || 'Failed to update progress');
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -208,10 +191,10 @@ const GoalDetailsModal = ({ goal, onClose, onGoalUpdated }) => {
 
               <button
                 onClick={handleUpdateProgress}
-                disabled={updating}
+                disabled={updateProgressMutation.isPending}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {updating ? 'Updating...' : 'Update Progress'}
+                {updateProgressMutation.isPending ? 'Updating...' : 'Update Progress'}
               </button>
             </div>
           </div>

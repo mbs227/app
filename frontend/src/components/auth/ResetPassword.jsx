@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
-
-const API = '/api';
+import { useResetPassword, useValidateResetToken } from '../../hooks/useAuth';
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -10,40 +8,32 @@ const ResetPassword = () => {
     new_password: '',
     confirm_password: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [validating, setValidating] = useState(false);
-  const [tokenValid, setTokenValid] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  const resetPasswordMutation = useResetPassword();
+
+  // Get token from URL and validate it
+  const urlToken = searchParams.get('token');
+  const { data: tokenValidation, isLoading: validating, isError: tokenError } = useValidateResetToken(formData.token || urlToken);
+  
+  const tokenValid = tokenValidation?.valid;
 
   useEffect(() => {
     // Check if token is provided in URL params
-    const urlToken = searchParams.get('token');
     if (urlToken) {
       setFormData(prev => ({ ...prev, token: urlToken }));
-      validateToken(urlToken);
     }
-  }, [searchParams]);
+  }, [urlToken]);
 
-  const validateToken = async (token) => {
-    if (!token) return;
-    
-    try {
-      setValidating(true);
-      await axios.post(`${API}/auth/validate-reset-token`, null, {
-        params: { token }
-      });
-      setTokenValid(true);
-    } catch (error) {
+  useEffect(() => {
+    if (tokenError) {
       setError('Invalid or expired reset token');
-      setTokenValid(false);
-    } finally {
-      setValidating(false);
     }
-  };
+  }, [tokenError]);
 
   const handleChange = (e) => {
     setFormData({
@@ -51,12 +41,6 @@ const ResetPassword = () => {
       [e.target.name]: e.target.value
     });
     setError('');
-  };
-
-  const handleTokenBlur = () => {
-    if (formData.token && formData.token !== searchParams.get('token')) {
-      validateToken(formData.token);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -73,12 +57,10 @@ const ResetPassword = () => {
       return;
     }
 
-    setLoading(true);
-
     try {
-      await axios.post(`${API}/auth/reset-password`, {
+      await resetPasswordMutation.mutateAsync({
         token: formData.token,
-        new_password: formData.new_password
+        newPassword: formData.new_password
       });
       
       setSuccess(true);
@@ -90,8 +72,6 @@ const ResetPassword = () => {
     } catch (error) {
       console.error('Reset password error:', error);
       setError(error.response?.data?.detail || 'Failed to reset password');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -153,7 +133,6 @@ const ResetPassword = () => {
                 required
                 value={formData.token}
                 onChange={handleChange}
-                onBlur={handleTokenBlur}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors font-mono text-sm"
                 placeholder="Enter your reset token"
               />
@@ -199,10 +178,10 @@ const ResetPassword = () => {
 
             <button
               type="submit"
-              disabled={loading || !tokenValid}
+              disabled={resetPasswordMutation.isPending || !tokenValid}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Resetting...' : 'Reset Password'}
+              {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset Password'}
             </button>
           </form>
 

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser, useLogin, useRegister, useLogout, authKeys } from '../hooks/useAuth';
 
 const AuthContext = createContext();
 
@@ -11,45 +12,26 @@ export const useAuth = () => {
   return context;
 };
 
-const API = '/api';
-
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
+  // Get current user with React Query
+  const { 
+    data: user, 
+    isLoading: loading,
+    refetch: refetchUser 
+  } = useCurrentUser();
+  
+  // Mutations
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const performLogout = useLogout();
 
-  useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      getCurrentUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
-
-  const getCurrentUser = async () => {
+  // Register handler
+  const register = useCallback(async (userData) => {
     try {
-      const response = await axios.get(`${API}/auth/me`);
-      setUser(response.data);
-    } catch (error) {
-      console.error('Error getting current user:', error);
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (userData) => {
-    try {
-      const response = await axios.post(`${API}/auth/register`, userData);
-      const { access_token, user: userResponse } = response.data;
-      
-      setToken(access_token);
-      setUser(userResponse);
-      localStorage.setItem('token', access_token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
-      return { success: true, user: userResponse };
+      const data = await registerMutation.mutateAsync(userData);
+      return { success: true, user: data.user };
     } catch (error) {
       console.error('Registration error:', error);
       return { 
@@ -57,19 +39,13 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data?.detail || 'Registration failed' 
       };
     }
-  };
+  }, [registerMutation]);
 
-  const login = async (credentials) => {
+  // Login handler
+  const login = useCallback(async (credentials) => {
     try {
-      const response = await axios.post(`${API}/auth/login`, credentials);
-      const { access_token, user: userResponse } = response.data;
-      
-      setToken(access_token);
-      setUser(userResponse);
-      localStorage.setItem('token', access_token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
-      return { success: true, user: userResponse };
+      const data = await loginMutation.mutateAsync(credentials);
+      return { success: true, user: data.user };
     } catch (error) {
       console.error('Login error:', error);
       return { 
@@ -77,24 +53,26 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data?.detail || 'Login failed' 
       };
     }
-  };
+  }, [loginMutation]);
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
-  };
+  // Logout handler
+  const logout = useCallback(() => {
+    performLogout();
+  }, [performLogout]);
 
-  const value = {
+  // Get token from localStorage
+  const token = useMemo(() => localStorage.getItem('token'), [user]);
+
+  const value = useMemo(() => ({
     user,
     token,
     loading,
     login,
     register,
     logout,
-    isAuthenticated: !!user
-  };
+    isAuthenticated: !!user,
+    refetchUser,
+  }), [user, token, loading, login, register, logout, refetchUser]);
 
   return (
     <AuthContext.Provider value={value}>
