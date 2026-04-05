@@ -6,7 +6,7 @@ import string
 from datetime import datetime, timedelta
 
 # Get the base URL from frontend .env file
-BACKEND_URL = "https://test-register-issues.preview.emergentagent.com"
+BACKEND_URL = "https://vite-react-query.preview.emergentagent.com"
 API_BASE_URL = f"{BACKEND_URL}/api"
 
 # Test data
