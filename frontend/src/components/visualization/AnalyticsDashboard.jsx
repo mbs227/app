@@ -3,8 +3,7 @@ import axios from 'axios';
 import CycleProgressRing from './CycleProgressRing';
 import ProgressCharts from './ProgressCharts';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = '/api';
 
 const AnalyticsDashboard = ({ selectedCycle }) => {
   const [dashboardAnalytics, setDashboardAnalytics] = useState(null);

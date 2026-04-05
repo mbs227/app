@@ -31,7 +31,7 @@ app = FastAPI(title="Manifest 12 API", description="12-Week Goal Manifestation P
 api_router = APIRouter(prefix="/api")
 
 # Security configuration
-SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
+SECRET_KEY = os.environ['SECRET_KEY']
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
@@ -429,7 +429,7 @@ async def create_cycle(cycle_data: CycleCreate, current_user: User = Depends(get
 
 @api_router.get("/cycles", response_model=List[Cycle])
 async def get_user_cycles(current_user: User = Depends(get_current_user)):
-    cycles = await db.cycles.find({"user_id": current_user.id}).to_list(1000)
+    cycles = await db.cycles.find({"user_id": current_user.id}, {"_id": 0}).to_list(100)
     return [Cycle(**cycle) for cycle in cycles]
 
 @api_router.get("/cycles/{cycle_id}", response_model=Cycle)
@@ -486,7 +486,7 @@ async def get_user_goals(cycle_id: str = None, current_user: User = Depends(get_
     if cycle_id:
         query["cycle_id"] = cycle_id
     
-    goals = await db.goals.find(query).to_list(1000)
+    goals = await db.goals.find(query, {"_id": 0}).to_list(100)
     return [Goal(**goal) for goal in goals]
 
 @api_router.get("/goals/{goal_id}", response_model=Goal)
@@ -548,7 +548,7 @@ async def get_reflections(cycle_id: str = None, current_user: User = Depends(get
     if cycle_id:
         query["cycle_id"] = cycle_id
     
-    reflections = await db.reflections.find(query).sort("week_number", 1).to_list(1000)
+    reflections = await db.reflections.find(query, {"_id": 0}).sort("week_number", 1).to_list(100)
     return [WeeklyReflection(**reflection) for reflection in reflections]
 
 @api_router.get("/reflections/{reflection_id}", response_model=WeeklyReflection)
@@ -627,13 +627,13 @@ async def get_cycle_analytics(cycle_id: str, current_user: User = Depends(get_cu
         raise HTTPException(status_code=404, detail="Cycle not found")
     
     # Get cycle goals
-    goals = await db.goals.find({"cycle_id": cycle_id, "user_id": current_user.id}).to_list(1000)
+    goals = await db.goals.find({"cycle_id": cycle_id, "user_id": current_user.id}, {"status": 1, "progress": 1, "_id": 0}).to_list(100)
     goals_total = len(goals)
     goals_completed = len([g for g in goals if g.get("status") == "completed"])
     completion_rate = (goals_completed / goals_total * 100) if goals_total > 0 else 0
     
     # Get reflections for average mood
-    reflections = await db.reflections.find({"cycle_id": cycle_id, "user_id": current_user.id}).to_list(1000)
+    reflections = await db.reflections.find({"cycle_id": cycle_id, "user_id": current_user.id}, {"mood_rating": 1, "law_of_attraction_manifestations": 1, "_id": 0}).to_list(100)
     average_mood = sum([r.get("mood_rating", 5) for r in reflections]) / len(reflections) if reflections else 5
     
     # Count manifestations
@@ -681,9 +681,9 @@ async def complete_cycle(cycle_id: str, completion_data: CycleComplete, current_
 @api_router.get("/analytics/dashboard", response_model=DashboardAnalytics)
 async def get_dashboard_analytics(current_user: User = Depends(get_current_user)):
     # Get user cycles and goals
-    cycles = await db.cycles.find({"user_id": current_user.id}).to_list(1000)
-    goals = await db.goals.find({"user_id": current_user.id}).to_list(1000)
-    reflections = await db.reflections.find({"user_id": current_user.id}).sort("created_at", -1).limit(10).to_list(10)
+    cycles = await db.cycles.find({"user_id": current_user.id}, {"status": 1, "_id": 0}).to_list(100)
+    goals = await db.goals.find({"user_id": current_user.id}, {"status": 1, "progress": 1, "_id": 0}).to_list(100)
+    reflections = await db.reflections.find({"user_id": current_user.id}, {"law_of_attraction_manifestations": 1, "mood_rating": 1, "_id": 0}).sort("created_at", -1).limit(10).to_list(10)
     
     total_cycles = len(cycles)
     active_cycles = len([c for c in cycles if c.get("status") == "active"])
@@ -738,7 +738,7 @@ async def create_status_check(input: StatusCheckCreate):
 
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
+    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(100)
     return [StatusCheck(**status_check) for status_check in status_checks]
 
 # Include the router in the main app
@@ -747,7 +747,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["https://app-seven-mu-88.vercel.app"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

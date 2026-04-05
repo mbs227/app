@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = '/api';
 
 const TwelveWeekCalendar = ({ cycle, goals = [] }) => {
   const [selectedWeek, setSelectedWeek] = useState(cycle?.current_week || 1);
