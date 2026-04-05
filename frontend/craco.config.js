@@ -7,6 +7,17 @@ const config = {
 };
 
 module.exports = {
+  devServer: (devServerConfig) => {
+    devServerConfig.proxy = {
+      '/api': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+        secure: false,
+        logLevel: 'debug',
+      },
+    };
+    return devServerConfig;
+  },
   webpack: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
