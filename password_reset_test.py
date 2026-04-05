@@ -6,7 +6,7 @@ import string
 from datetime import datetime, timedelta
 
 # Get the base URL from frontend .env file
-BACKEND_URL = "https://8e339c75-6530-4d24-9a1d-5a894763e0dd.preview.emergentagent.com"
+BACKEND_URL = "https://test-register-issues.preview.emergentagent.com"
 API_BASE_URL = f"{BACKEND_URL}/api"
 
 # Test data
