@@ -21,3 +21,9 @@
 - Email: duplicate.test@example.com
 - Password: password123
 - Full Name: Original User
+
+
+### Test User 5 (Created during Vite migration testing)
+- Email: vitetest@example.com
+- Password: vitetest123
+- Full Name: Vite Test User
